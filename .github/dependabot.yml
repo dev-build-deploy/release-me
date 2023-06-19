@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "production"
+    open-pull-requests-limit: 0
