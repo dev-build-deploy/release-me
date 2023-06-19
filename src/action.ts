@@ -7,7 +7,15 @@ SPDX-License-Identifier: GPL-3.0-or-later
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { SemVer, sortSemVer } from "./semver";
-import { ConventionalCommitError, ICommit, getCommit, getConventionalCommit } from "@dev-build-deploy/commit-it";
+import {
+  ConventionalCommitError,
+  ICommit,
+  IConventionalCommit,
+  getCommit,
+  getConventionalCommit,
+  isConventionalCommit,
+} from "@dev-build-deploy/commit-it";
+import { generateChangelog } from "./changelog";
 
 /**
  * Retrieve GitHub Releases, sorted by SemVer
@@ -42,14 +50,13 @@ async function getChangesSinceRelease(tag: string): Promise<ICommit[]> {
  * @returns The bump type ("major", "minor", "patch" or undefined)
  * @internal
  */
-export function determineBumpType(commits: ICommit[]): "major" | "minor" | "patch" | undefined {
+export function determineBumpType(commits: IConventionalCommit[]): "major" | "minor" | "patch" | undefined {
   const typeCount: { [key: string]: number } = { feat: 0, fix: 0 };
 
   for (const commit of commits) {
     try {
-      const conventionalCommit = getConventionalCommit(commit);
-      if (conventionalCommit.breaking) return "major";
-      typeCount[conventionalCommit.type]++;
+      if (commit.breaking) return "major";
+      typeCount[commit.type]++;
     } catch (error) {
       if (!(error instanceof ConventionalCommitError)) throw error;
     }
@@ -61,12 +68,30 @@ export function determineBumpType(commits: ICommit[]): "major" | "minor" | "patc
   return;
 }
 
-function createRelease(version: SemVer) {
+/**
+ * Filters the provided commits to only include Conventional Commits
+ * @param commits The commits to filter
+ * @returns List of Conventional Commits
+ * @internal
+ */
+export function filterConventionalCommits(commits: ICommit[]): IConventionalCommit[] {
+  return commits
+    .map(c => {
+      try {
+        return getConventionalCommit(c);
+      } catch (error) {
+        if (!(error instanceof ConventionalCommitError)) throw error;
+      }
+    })
+    .filter(c => c !== undefined) as IConventionalCommit[];
+}
+
+function createRelease(version: SemVer, commits: IConventionalCommit[]) {
   const octokit = github.getOctokit(core.getInput("token"));
 
   return octokit.rest.repos.createRelease({
     name: version.toString(),
-    body: "ReleaseMe",
+    body: generateChangelog(version, commits),
     draft: false,
     prerelease: version.preRelease !== undefined,
     make_latest: version.preRelease === undefined ? "true" : "false",
@@ -113,7 +138,9 @@ export async function run(): Promise<void> {
     const delta = await getChangesSinceRelease(latestRelease.tag_name);
     core.info(`ℹ️ Changes since latest release: ${delta.length} commits`);
 
-    const bump = determineBumpType(delta);
+    const commits = filterConventionalCommits(delta);
+    const bump = determineBumpType(commits);
+
     if (bump === undefined) {
       core.info("⚠️ No bump required, skipping...");
       core.endGroup();
@@ -124,7 +151,7 @@ export async function run(): Promise<void> {
     core.startGroup("📝 Creating GitHub Release");
     const newVersion = new SemVer(latestRelease.tag_name).bump(bump);
     core.info(`Next version will be: ${newVersion}`);
-    await createRelease(newVersion);
+    await createRelease(newVersion, commits);
     core.setOutput("new-version", newVersion);
     core.endGroup();
   } catch (ex) {
