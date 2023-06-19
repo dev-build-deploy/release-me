@@ -69,7 +69,7 @@ function createRelease(version: SemVer) {
     body: "ReleaseMe",
     draft: false,
     prerelease: version.preRelease !== undefined,
-    make_latest: version.preRelease === undefined,
+    make_latest: version.preRelease === undefined ? "true" : "false",
     generate_release_notes: false,
     discussion_category_name: undefined,
     tag_name: version.toString(),
