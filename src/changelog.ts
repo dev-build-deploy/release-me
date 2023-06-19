@@ -114,7 +114,7 @@ export function generateChangelog(version: SemVer, commits: IConventionalCommit[
 
       if (categoryCommits.length === 0) return "";
 
-      return `## ${category.title}\n\n${categoryCommits
+      return `### ${category.title}\n\n${categoryCommits
         .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
         .join("\n")}\n\n`;
     })
