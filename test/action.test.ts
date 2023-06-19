@@ -13,7 +13,7 @@ describe("Determine bump type", () => {
       { hash: "0a0b0c0d", subject: "fix: prevent bug" },
       { hash: "0a0b0c0d", subject: "chore!: breaking change" },
     ];
-    expect(action.determineBumpType(commits)).toBe("major");
+    expect(action.determineBumpType(action.filterConventionalCommits(commits))).toBe("major");
   });
 
   test("Breaking Change (footer)", () => {
@@ -22,7 +22,7 @@ describe("Determine bump type", () => {
       { hash: "0a0b0c0d", subject: "fix: prevent bug", footer: { "BREAKING CHANGE": "This is a breaking change" } },
       { hash: "0a0b0c0d", subject: "chore: breaking change" },
     ];
-    expect(action.determineBumpType(commits)).toBe("major");
+    expect(action.determineBumpType(action.filterConventionalCommits(commits))).toBe("major");
   });
 
   test("Minor change", () => {
@@ -31,7 +31,7 @@ describe("Determine bump type", () => {
       { hash: "0a0b0c0d", subject: "fix: prevent bug" },
       { hash: "0a0b0c0d", subject: "chore: breaking change" },
     ];
-    expect(action.determineBumpType(commits)).toBe("minor");
+    expect(action.determineBumpType(action.filterConventionalCommits(commits))).toBe("minor");
   });
 
   test("Patch change", () => {
@@ -40,7 +40,7 @@ describe("Determine bump type", () => {
       { hash: "0a0b0c0d", subject: "fix: prevent bug" },
       { hash: "0a0b0c0d", subject: "chore: breaking change" },
     ];
-    expect(action.determineBumpType(commits)).toBe("patch");
+    expect(action.determineBumpType(action.filterConventionalCommits(commits))).toBe("patch");
   });
 
   test("No change", () => {
@@ -49,6 +49,6 @@ describe("Determine bump type", () => {
       { hash: "0a0b0c0d", subject: "perf: introduce async handling of events" },
       { hash: "0a0b0c0d", subject: "chore: breaking change" },
     ];
-    expect(action.determineBumpType(commits)).toBe(undefined);
+    expect(action.determineBumpType(action.filterConventionalCommits(commits))).toBe(undefined);
   });
 });
