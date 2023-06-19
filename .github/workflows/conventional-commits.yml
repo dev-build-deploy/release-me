@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+---
+
+name: Conventional Commits
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}  # Ensure that only one instance of this workflow is running per Pull Request
+  cancel-in-progress: true  # Cancel any previous runs of this workflow
+
+permissions:
+  contents: read  # Required to retrieve the commits associated with your Pull Request
+  pull-requests: write  # Required to add a label to your Pull Request
+
+jobs:
+  commit-me:
+    name: Conventional Commits Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dev-build-deploy/commit-me@v0
+        with:
+          token: ${{ github.token }}

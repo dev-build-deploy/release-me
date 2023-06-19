@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: 'ReleaseMe - GitHub Release Management'
+author: 'Kevin de Jong'
+description: >
+  Managing GitHub releases using Conventional Commits.
+
+branding:
+  icon: 'code'  
+  color: 'white'
+
+inputs:
+  token: 
+    description: 'GitHub token used to access GitHub (eg. github.token)'
+    required: false
+
+runs:
+  using: 'node16'
+  main: 'lib/index.js'

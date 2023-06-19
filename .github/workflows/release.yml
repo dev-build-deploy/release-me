@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+---
+
+name: Release and Deploy GitHub Action
+
+concurrency: deployment
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release-me:
+    name: ReleaseMe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ReleaseMe
+        uses: ./
+        with:
+          token: ${{ github.token }}

@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: release-me
+Upstream-Contact: Kevin de Jong <monkaii@hotmail.com>
+Source: https://github.com/dev-build-deploy/release-me
+
+Files: lib/**
+Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
+License: GPL-3.0-or-later
