@@ -15,6 +15,10 @@ inputs:
   token: 
     description: 'GitHub token used to access GitHub (eg. github.token)'
     required: false
+  
+  prefix:
+    description: 'Prefix used for the release (eg. v)'
+    required: false
 
 outputs:
   created:

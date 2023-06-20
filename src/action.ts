@@ -13,7 +13,6 @@ import {
   IConventionalCommit,
   getCommit,
   getConventionalCommit,
-  isConventionalCommit,
 } from "@dev-build-deploy/commit-it";
 import { generateChangelog } from "./changelog";
 import { IReleaseObject } from "./release";
@@ -24,9 +23,12 @@ import { IReleaseObject } from "./release";
  */
 async function getReleases() {
   const octokit = github.getOctokit(core.getInput("token"));
+  const prefix = core.getInput("prefix") ?? undefined;
 
   const { data: releases } = await octokit.rest.repos.listReleases({ ...github.context.repo });
-  return releases.sort((a: any, b: any) => sortSemVer(new SemVer(a.tag_name), new SemVer(b.tag_name)));
+  return releases
+    .filter(r => SemVer.isValid(r.tag_name, prefix))
+    .sort((a: any, b: any) => sortSemVer(SemVer.fromString(a.tag_name, prefix), SemVer.fromString(b.tag_name, prefix)));
 }
 
 /**
@@ -155,7 +157,9 @@ export async function run(): Promise<void> {
     core.endGroup();
 
     core.startGroup("📝 Creating GitHub Release");
-    const newVersion = new SemVer(latestRelease.tag_name).bump(bump);
+    const prefix = core.getInput("prefix") ?? undefined;
+    const newVersion = SemVer.fromString(latestRelease.tag_name, prefix)?.bump(bump);
+
     core.info(`Next version will be: ${newVersion}`);
     const release = await createRelease(newVersion, commits);
     core.setOutput("release", JSON.stringify(release));

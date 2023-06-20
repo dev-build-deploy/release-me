@@ -39,6 +39,7 @@ jobs:
         uses: dev-build-deploy/release-me@v0
         with:
           token: ${{ github.token }}
+          prefix: v  # OPTIONAL; prefixes the Semantic Verion with v (e.g. v1.0.0)
 
       - if: ${{ steps.release.outputs.created }}
         run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}
@@ -49,6 +50,7 @@ jobs:
 | Key | Description |
 | --- | --- |
 | `token` | GitHub token used to access GitHub |
+| `prefix` | Prefix for the Semantic Version, MUST be one of `[A-Za-z0-9-.]` |
 
 ## Outputs
 

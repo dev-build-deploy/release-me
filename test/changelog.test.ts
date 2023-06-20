@@ -45,7 +45,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -65,7 +65,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -85,7 +85,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -105,7 +105,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -128,7 +128,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -152,7 +152,7 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer("0.0.1"), commits);
+    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);

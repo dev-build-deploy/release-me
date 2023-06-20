@@ -4,6 +4,12 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+const SEMVER_REGEX =
+  /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[a-zA-Z0-9.-]+))?(\+(?<build>[a-zA-Z0-9.-]+))?$/;
+
+type SemVerIdentifier = "preRelease" | "build";
+type SemVerVersionCore = "major" | "minor" | "patch";
+
 /**
  * A simple SemVer implementation
  * @interface ISemVer
@@ -37,31 +43,83 @@ export interface ISemVer {
  * @internal
  */
 export class SemVer implements ISemVer {
+  prefix?: string;
   major: number;
   minor: number;
   patch: number;
   preRelease?: string;
   build?: string;
 
-  constructor(version: string) {
-    // SemVer regex
-    const semVerRegEx =
-      /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[a-zA-Z0-9.-]+))?(\+(?<build>[a-zA-Z0-9.-]+))?$/;
-    const groups = semVerRegEx.exec(version)?.groups;
-    if (groups === undefined) throw new Error(`Unable to parse version: ${version}`);
-
-    this.major = parseInt(groups.major);
-    this.minor = parseInt(groups.minor);
-    this.patch = parseInt(groups.patch);
-    this.preRelease = groups.preRelease;
-    this.build = groups.build;
+  constructor(version?: {
+    major?: number;
+    minor?: number;
+    patch?: number;
+    preRelease?: string;
+    build?: string;
+    prefix?: string;
+  }) {
+    this.major = version?.major ?? 0;
+    this.minor = version?.minor ?? 0;
+    this.patch = version?.patch ?? 0;
+    this.preRelease = version?.preRelease;
+    this.build = version?.build;
+    this.prefix = version?.prefix;
   }
 
-  static isSemVer(version: string) {
-    const semVerRegEx =
-      /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[a-zA-Z0-9.-]+))?(\+(?<build>[a-zA-Z0-9.-]+))?$/;
+  /**
+   * Construct a SemVer object from a version string
+   * @param version Version string
+   * @param prefix Prefix to remove from the version string
+   * @returns SemVer object
+   */
+  static fromString(version: string, prefix?: string): SemVer {
+    // Handle prefix
+    if (prefix !== undefined) {
+      if (!version.startsWith(prefix)) throw new Error("Incorrect SemVer, missing prefix");
+      version = version.substring(prefix.length);
+    }
 
-    return semVerRegEx.exec(version)?.groups !== undefined;
+    // SemVer regex
+    const groups = SEMVER_REGEX.exec(version)?.groups;
+    if (groups === undefined) throw new Error("Could not parse SemVer");
+
+    return new SemVer({
+      major: parseInt(groups.major),
+      minor: parseInt(groups.minor),
+      patch: parseInt(groups.patch),
+      preRelease: groups.preRelease,
+      build: groups.build,
+      prefix: prefix,
+    });
+  }
+
+  /**
+   * Checks if the provided string is a valid SemVer
+   * @param version Version to check
+   * @returns Whether the provided string is a SemVer
+   */
+  static isValid(version: string, prefix?: string): boolean {
+    try {
+      SemVer.fromString(version, prefix);
+      return true;
+    } catch (error: any) {
+      return false;
+    }
+  }
+
+  /**
+   * Bumps the value of the SemVer identifier
+   * @param identifier Identifier to bump
+   * @returns Bumped identifier, undefined when identifier does not exist
+   */
+  private bumpIdentifier(identifier: SemVerIdentifier): string | undefined {
+    if (this[identifier] === undefined) return;
+
+    const keyValuePair = identifierKeyValue(this[identifier]);
+    if (keyValuePair?.key === undefined || keyValuePair?.value === undefined)
+      throw new Error(`Unable to bump ${identifier}`);
+
+    return `${keyValuePair.key}${keyValuePair.value + 1}`;
   }
 
   /**
@@ -78,48 +136,19 @@ export class SemVer implements ISemVer {
    * @param type Type of bump
    * @returns Bumped SemVer
    */
-  bump(type: "major" | "minor" | "patch" | "preRelease" | "build"): SemVer {
-    const semVer = new SemVer(this.toString());
+  bump(type: SemVerVersionCore | SemVerIdentifier): SemVer {
     switch (type) {
       case "preRelease":
-        semVer.build = undefined;
-        if (semVer.preRelease === undefined) semVer.preRelease = "rc.1"; // TODO: Make this configurable
-        else {
-          const identifier = identifierKeyValue(semVer.preRelease);
-          if (identifier?.key === undefined || identifier?.value === undefined)
-            throw new Error("Unable to bump pre-release");
-          semVer.preRelease = `${identifier.key}${identifier.value + 1}`;
-        }
-        break;
+        return new SemVer({ ...this, preRelease: this.bumpIdentifier(type) ?? "rc.1", build: undefined });
       case "build":
-        if (semVer.build === undefined) semVer.build = "build.1"; // TODO: Make this configurable
-        else {
-          const identifier = identifierKeyValue(semVer.build);
-          if (identifier?.key === undefined || identifier?.value === undefined) throw new Error("Unable to bump build");
-          semVer.build = `${identifier.key}${identifier.value + 1}`;
-        }
-        break;
+        return new SemVer({ ...this, preRelease: this.preRelease, build: this.bumpIdentifier(type) ?? "build.1" });
       case "major":
-        semVer.major += 1;
-        semVer.minor = 0;
-        semVer.patch = 0;
-        semVer.preRelease = undefined;
-        semVer.build = undefined;
-        break;
+        return new SemVer({ prefix: this.prefix, major: this.major + 1 });
       case "minor":
-        semVer.minor += 1;
-        semVer.patch = 0;
-        semVer.preRelease = undefined;
-        semVer.build = undefined;
-        break;
+        return new SemVer({ prefix: this.prefix, major: this.major, minor: this.minor + 1 });
       case "patch":
-        semVer.patch += 1;
-        semVer.preRelease = undefined;
-        semVer.build = undefined;
-        break;
+        return new SemVer({ prefix: this.prefix, major: this.major, minor: this.minor, patch: this.patch + 1 });
     }
-
-    return semVer;
   }
 
   /**
@@ -127,9 +156,9 @@ export class SemVer implements ISemVer {
    * @returns SemVer as a string
    */
   toString(): string {
-    return `${this.major}.${this.minor}.${this.patch}${this.preRelease ? "-" + this.preRelease : ""}${
-      this.build ? "+" + this.build : ""
-    }`;
+    return `${this.prefix !== undefined ? this.prefix : ""}${this.major}.${this.minor}.${this.patch}${
+      this.preRelease ? "-" + this.preRelease : ""
+    }${this.build ? "+" + this.build : ""}`;
   }
 }
 
@@ -139,10 +168,8 @@ export class SemVer implements ISemVer {
  * @returns Identifier value (e.g. 1)
  */
 function identifierKeyValue(identifier?: string): { key?: string; value?: number } | undefined {
-  if (identifier === undefined) return {};
-
   const identifierRegex = /^([a-zA-Z-]+[.])([0-9]+)$/;
-  const match = identifierRegex.exec(identifier);
+  const match = identifierRegex.exec(identifier ?? "");
   if (match === null) return {};
 
   return { key: match[1], value: parseInt(match[2]) };
@@ -177,7 +204,8 @@ function sortIdentifier(a?: string, b?: string): number | undefined {
  * @internal
  */
 export function sortSemVer(a: ISemVer, b: ISemVer): number {
-  const keys: (keyof ISemVer)[] = ["major", "minor", "patch"];
+  const keys: SemVerVersionCore[] = ["major", "minor", "patch"];
+
   for (const key of keys) {
     const aValue = a[key] as number;
     const bValue = b[key] as number;
