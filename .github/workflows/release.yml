@@ -20,6 +20,10 @@ jobs:
   release-me:
     name: Create GitHub Release
     runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.release.outputs.created }}
+      release: ${{ steps.release.outputs.release }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -28,6 +32,24 @@ jobs:
         uses: ./
         with:
           token: ${{ github.token }}
+          prefix: v
 
       - if: ${{ steps.release.outputs.created }}
         run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}
+
+  release-action:
+    name: Release GitHub Action
+    runs-on: ubuntu-latest
+    needs: release-me
+    if: needs.release-me.outputs.created
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.release).tag_name }}
+
+      - name: Update the ${{ fromJSON(steps.release.outputs.release).tag_name }} tag
+        uses: actions/publish-action@v0.2.2
+        with:
+          source-tag: ${{ fromJSON(steps.release.outputs.release).tag_name }}
