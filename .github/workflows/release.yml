@@ -18,11 +18,16 @@ permissions:
 
 jobs:
   release-me:
-    name: ReleaseMe
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Run ReleaseMe
+        id: release
         uses: ./
         with:
           token: ${{ github.token }}
+
+      - if: ${{ steps.release.outputs.created }}
+        run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}

@@ -16,6 +16,7 @@ import {
   isConventionalCommit,
 } from "@dev-build-deploy/commit-it";
 import { generateChangelog } from "./changelog";
+import { IReleaseObject } from "./release";
 
 /**
  * Retrieve GitHub Releases, sorted by SemVer
@@ -86,21 +87,27 @@ export function filterConventionalCommits(commits: ICommit[]): IConventionalComm
     .filter(c => c !== undefined) as IConventionalCommit[];
 }
 
-function createRelease(version: SemVer, commits: IConventionalCommit[]) {
+async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
   const octokit = github.getOctokit(core.getInput("token"));
 
-  return octokit.rest.repos.createRelease({
+  const releaseConfig: IReleaseObject = {
     name: version.toString(),
     body: generateChangelog(version, commits),
     draft: false,
     prerelease: version.preRelease !== undefined,
     make_latest: version.preRelease === undefined ? "true" : "false",
-    generate_release_notes: false,
-    discussion_category_name: undefined,
     tag_name: version.toString(),
     target_commitish: github.context.ref,
+  };
+
+  await octokit.rest.repos.createRelease({
     ...github.context.repo,
+    ...releaseConfig,
+    generate_release_notes: false,
+    discussion_category_name: undefined,
   });
+
+  return releaseConfig;
 }
 
 /**
@@ -119,7 +126,6 @@ function isDefaultBranch() {
 export async function run(): Promise<void> {
   try {
     core.info("📄 ReleaseMe - GitHub Release Management");
-
     if (!isDefaultBranch()) {
       core.warning(`⚠️ Not on default branch, skipping...`);
       return;
@@ -151,8 +157,9 @@ export async function run(): Promise<void> {
     core.startGroup("📝 Creating GitHub Release");
     const newVersion = new SemVer(latestRelease.tag_name).bump(bump);
     core.info(`Next version will be: ${newVersion}`);
-    await createRelease(newVersion, commits);
-    core.setOutput("new-version", newVersion);
+    const release = await createRelease(newVersion, commits);
+    core.setOutput("release", JSON.stringify(release));
+    core.setOutput("created", true);
     core.endGroup();
   } catch (ex) {
     core.setFailed((ex as Error).message);
