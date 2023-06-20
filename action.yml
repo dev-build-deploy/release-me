@@ -16,6 +16,13 @@ inputs:
     description: 'GitHub token used to access GitHub (eg. github.token)'
     required: false
 
+outputs:
+  created:
+    description: 'Boolean indicating if a release was created'
+
+  release:
+    description: 'JSON object containing the release information'
+
 runs:
   using: 'node16'
   main: 'lib/index.js'
