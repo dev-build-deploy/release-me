@@ -34,14 +34,11 @@ jobs:
           token: ${{ github.token }}
           prefix: v
 
-      - if: ${{ steps.release.outputs.created != '' }}
-        run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}
-
   release-action:
     name: Release GitHub Action
     runs-on: ubuntu-latest
     needs: release-me
-    if: needs.release-me.outputs.created != ''
+    if: needs.release-me.outputs.created
 
     steps:
       - name: Checkout
