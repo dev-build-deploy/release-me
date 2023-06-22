@@ -5,7 +5,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 import * as changelog from "../src/changelog";
-import { SemVer } from "../src/semver";
 
 describe("Generate Changelog", () => {
   const commits = [
@@ -40,12 +39,11 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfiguration").mockImplementation(() => {
       return {
         changelog: {
-          categories: [{ title: "💥 Breaking Changes", bump: ["major"] }],
+          categories: [{ title: "💥 Breaking Changes", increment: ["major"] }],
         },
       };
     });
-
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -60,12 +58,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfiguration").mockImplementation(() => {
       return {
         changelog: {
-          categories: [{ title: "💥 Breaking Changes", bump: ["major"], types: ["feat"] }],
+          categories: [{ title: "💥 Breaking Changes", increment: ["major"], types: ["feat"] }],
         },
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -80,12 +78,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfiguration").mockImplementation(() => {
       return {
         changelog: {
-          categories: [{ title: "🐛 Bug Fixes", bump: ["patch"], scopes: ["core"] }],
+          categories: [{ title: "🐛 Bug Fixes", increment: ["patch"], scopes: ["core"] }],
         },
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -100,12 +98,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfiguration").mockImplementation(() => {
       return {
         changelog: {
-          categories: [{ title: "🐛 Bug Fixes", bump: ["patch"], exclude: { scopes: ["core"] } }],
+          categories: [{ title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } }],
         },
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -121,14 +119,14 @@ describe("Generate Changelog", () => {
       return {
         changelog: {
           categories: [
-            { title: "🐛 Bug Fixes", bump: ["patch"], exclude: { scopes: ["core"] } },
+            { title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } },
             { title: "📚 Documentation", types: ["docs"] },
           ],
         },
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -145,14 +143,14 @@ describe("Generate Changelog", () => {
         changelog: {
           exclude: { types: ["fix"] },
           categories: [
-            { title: "🐛 Bug Fixes", bump: ["patch"], exclude: { scopes: ["core"] } },
+            { title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } },
             { title: "📚 Documentation", types: ["docs"] },
           ],
         },
       };
     });
 
-    const result = changelog.generateChangelog(new SemVer({ major: 0, minor: 0, patch: 1 }), commits);
+    const result = changelog.generateChangelog(commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);

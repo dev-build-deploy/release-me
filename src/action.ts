@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { SemVer, sortSemVer } from "./semver";
+import { ISemVer, SemVer } from "@dev-build-deploy/version-it";
 import {
   ConventionalCommitError,
   ICommit,
@@ -27,8 +27,15 @@ async function getReleases() {
 
   const { data: releases } = await octokit.rest.repos.listReleases({ ...github.context.repo });
   return releases
-    .filter(r => SemVer.isValid(r.tag_name, prefix))
-    .sort((a: any, b: any) => sortSemVer(SemVer.fromString(a.tag_name, prefix), SemVer.fromString(b.tag_name, prefix)));
+    .filter(r => {
+      try {
+        new SemVer(r.tag_name, prefix);
+      } catch (error) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new SemVer(a.tag_name, prefix).compareTo(new SemVer(b.tag_name, prefix)));
 }
 
 /**
@@ -48,12 +55,12 @@ async function getChangesSinceRelease(tag: string): Promise<ICommit[]> {
 }
 
 /**
- * Determines the bump type based on the provided Conventional Commits
+ * Determines the increment type based on the provided Conventional Commits
  * @param commits
- * @returns The bump type ("major", "minor", "patch" or undefined)
+ * @returns The increment type ("major", "minor", "patch" or undefined)
  * @internal
  */
-export function determineBumpType(commits: IConventionalCommit[]): "major" | "minor" | "patch" | undefined {
+export function determineIncrementType(commits: IConventionalCommit[]): keyof ISemVer | undefined {
   const typeCount: { [key: string]: number } = { feat: 0, fix: 0 };
 
   for (const commit of commits) {
@@ -94,7 +101,7 @@ async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
 
   const releaseConfig: IReleaseObject = {
     name: version.toString(),
-    body: generateChangelog(version, commits),
+    body: generateChangelog(commits),
     draft: false,
     prerelease: version.preRelease !== undefined,
     make_latest: version.preRelease === undefined ? "true" : "false",
@@ -147,10 +154,10 @@ export async function run(): Promise<void> {
     core.info(`ℹ️ Changes since latest release: ${delta.length} commits`);
 
     const commits = filterConventionalCommits(delta);
-    const bump = determineBumpType(commits);
+    const increment = determineIncrementType(commits);
 
-    if (bump === undefined) {
-      core.info("⚠️ No bump required, skipping...");
+    if (increment === undefined) {
+      core.info("⚠️ No increment required, skipping...");
       core.endGroup();
       return;
     }
@@ -158,7 +165,7 @@ export async function run(): Promise<void> {
 
     core.startGroup("📝 Creating GitHub Release");
     const prefix = core.getInput("prefix") ?? undefined;
-    const newVersion = SemVer.fromString(latestRelease.tag_name, prefix)?.bump(bump);
+    const newVersion = new SemVer(latestRelease.tag_name, prefix).increment(increment);
 
     core.info(`Next version will be: ${newVersion}`);
     const release = await createRelease(newVersion, commits);
