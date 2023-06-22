@@ -5,21 +5,19 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 import { IConventionalCommit } from "@dev-build-deploy/commit-it";
-import { SemVer } from "./semver";
-import { determineBumpType } from "./action";
+import { ISemVer } from "@dev-build-deploy/version-it";
+import { determineIncrementType } from "./action";
 import * as thisModule from "./changelog";
-
-type semVerBumpTypes = "major" | "minor" | "patch" | "none";
 
 /**
  * Exclude configuration
  * @interface IExclude
- * @member bump Exclude commits from the changelog based on the bump type
+ * @member increment Exclude commits from the changelog based on the increment type
  * @member types Exclude commits from the changelog based on the type
  * @member scopes Exclude commits from the changelog based on the scope
  */
 interface IExclude {
-  bump?: semVerBumpTypes[];
+  increment?: (keyof ISemVer)[];
   types?: string[];
   scopes?: string[];
 }
@@ -31,7 +29,7 @@ interface IExclude {
  * @member changelog.exclude Exclude commits from the changelog
  * @member changelog.categories Categories to use in the changelog
  * @member changelog.categories.title Title of the category
- * @member changelog.categories.bump Bump type for the category
+ * @member changelog.categories.increment Increment type for the category
  * @member changelog.categories.types Types to include in the category
  * @member changelog.categories.scopes Scopes to include in the category
  * @member changelog.categories.exclude Exclude commits from the category
@@ -41,7 +39,7 @@ interface IReleaseConfiguration {
     exclude?: IExclude;
     categories?: {
       title: string;
-      bump?: semVerBumpTypes[];
+      increment?: (keyof ISemVer)[];
       types?: string[];
       scopes?: string[];
       exclude?: IExclude;
@@ -58,12 +56,12 @@ export function getConfiguration(): IReleaseConfiguration {
   return {
     changelog: {
       categories: [
-        { title: "💥 Breaking Changes", bump: ["major"] },
-        { title: "✨ New Features", bump: ["minor"] },
-        { title: "🐛 Bug Fixes", bump: ["patch"] },
+        { title: "💥 Breaking Changes", increment: ["major"] },
+        { title: "✨ New Features", increment: ["minor"] },
+        { title: "🐛 Bug Fixes", increment: ["patch"] },
       ],
     },
-  };
+  } as IReleaseConfiguration;
 }
 
 /**
@@ -81,38 +79,36 @@ function firstCharToUpperCase(value: string) {
  * @param commits Conventional Commits part of the Changelog
  * @returns Changelog in Markdown format
  */
-export function generateChangelog(version: SemVer, commits: IConventionalCommit[]) {
+export function generateChangelog(commits: IConventionalCommit[]) {
   const config = thisModule.getConfiguration();
-
-  const changelog = `## What's Changed\n\n${config.changelog?.categories
+  const title = "## What's Changed";
+  const changelog = `${title}\n\n${config.changelog?.categories
     ?.map(category => {
       const categoryCommits = commits.filter(commit => {
-        if (category.bump && !category.bump.includes((determineBumpType([commit]) as semVerBumpTypes) ?? "none"))
-          return false;
-        if (
-          category.exclude?.bump &&
-          category.exclude.bump.includes((determineBumpType([commit]) as semVerBumpTypes) ?? "none")
-        )
-          return false;
-        if (
-          config.changelog?.exclude?.bump &&
-          config.changelog.exclude.bump.includes((determineBumpType([commit]) as semVerBumpTypes) ?? "none")
-        )
-          return false;
+        const incrementType = determineIncrementType([commit]);
+        const hasValidIncrement =
+          incrementType === undefined
+            ? category.increment === undefined
+            : category.increment?.includes(incrementType) &&
+              !category.exclude?.increment?.includes(incrementType) &&
+              !config.changelog?.exclude?.increment?.includes(incrementType);
 
-        if (category.types && !category.types.includes(commit.type)) return false;
-        if (category.exclude?.types && category.exclude.types.includes(commit.type)) return false;
-        if (config.changelog?.exclude?.types && config.changelog.exclude.types.includes(commit.type)) return false;
+        const hasValidType =
+          category.types?.includes(commit.type) !== false &&
+          !category.exclude?.types?.includes(commit.type) &&
+          !config.changelog?.exclude?.types?.includes(commit.type);
 
-        if (category.scopes && !category.scopes.includes(commit.scope ?? "none")) return false;
-        if (category.exclude?.scopes && category.exclude.scopes.includes(commit.scope ?? "none")) return false;
-        if (config.changelog?.exclude?.scopes && config.changelog.exclude.scopes.includes(commit.scope ?? "none"))
-          return false;
+        const hasValidScope =
+          commit.scope === undefined
+            ? (category.scopes?.length ?? 0) === 0
+            : category.scopes?.includes(commit.scope) !== false &&
+              !category.exclude?.scopes?.includes(commit.scope) &&
+              !config.changelog?.exclude?.scopes?.includes(commit.scope);
 
-        return true;
+        return hasValidIncrement && hasValidType && hasValidScope;
       });
 
-      if (categoryCommits.length === 0) return "";
+      if (categoryCommits.length === 0) return `### ${category.title}`;
 
       return `### ${category.title}\n\n${categoryCommits
         .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
