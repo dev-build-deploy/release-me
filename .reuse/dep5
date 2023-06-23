@@ -6,3 +6,7 @@ Source: https://github.com/dev-build-deploy/release-me
 Files: lib/**
 Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
 License: GPL-3.0-or-later
+
+Files: docs/*.png
+Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
+License: GPL-3.0-or-later

@@ -101,7 +101,7 @@ async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
 
   const releaseConfig: IReleaseObject = {
     name: version.toString(),
-    body: generateChangelog(commits),
+    body: await generateChangelog(commits),
     draft: false,
     prerelease: version.preRelease !== undefined,
     make_latest: version.preRelease === undefined ? "true" : "false",
