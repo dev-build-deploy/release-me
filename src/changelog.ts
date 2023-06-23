@@ -153,13 +153,11 @@ export async function generateChangelog(commits: IConventionalCommit[]) {
 
         return hasValidIncrement === true && hasValidType === true && hasValidScope === true;
       });
-      console.log(categoryCommits);
 
-      if (categoryCommits.length === 0) return `### ${category.title}`;
-
-      return `### ${category.title}\n\n${categoryCommits
-        .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
-        .join("\n")}\n\n`;
+      if (categoryCommits.length > 0)
+        return `### ${category.title}\n\n${categoryCommits
+          .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
+          .join("\n")}\n\n`;
     })
     .join("\n")}`;
 
