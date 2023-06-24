@@ -119,6 +119,7 @@ changelog:
 
 ## Outputs
 
+| Key | Description |
 | --- | --- |
 | `created` | Set to `true` when a release was created, otherwise the output is not set |
 | `release` | [Release object](./src/release.ts) containing relevant information about the created release. Only set when `created` is set to `true`.|
