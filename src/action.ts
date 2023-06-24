@@ -22,35 +22,62 @@ import { generateChangelog } from "./changelog";
 import { IReleaseObject } from "./release";
 
 /**
+ * Asset information
+ * @interface IAsset
+ * @member name The filename (path) of the asset
+ * @member label The label of the asset
+ */
+interface IAsset {
+  name: string;
+  label?: string;
+}
+
+/**
+ * Downloads the list of artifacts
+ * @param artifacts List of artifacts to download
+ * @returns List of filepaths towards the downloaded artifacts
+ */
+async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
+  const client = artifact.create();
+  const filepaths: IAsset[] = [];
+  for (const artifact of artifacts) {
+    core.startGroup(`📡 Downloading artifact: ${artifact}`);
+
+    const dirname = `release-me-asset-${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
+    const resp = await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
+    console.log(resp);
+    for (const file of fs.readdirSync(dirname)) {
+      filepaths.push({ name: path.join(dirname, file), label: artifact });
+    }
+
+    core.endGroup();
+  }
+
+  return filepaths;
+}
+
+/**
  * Uploads the list of artifacts to the GitHub Release
  * @param assets List of artifacts to upload
  */
-async function uploadArtifacts(id: number, artifacts: string[]) {
+async function uploadAssets(id: number, assets: IAsset[]) {
   const octokit = github.getOctokit(core.getInput("token"));
-  const client = artifact.create();
 
-  for (const artifact of artifacts) {
-    core.startGroup(`📡 Uploading artifact: ${artifact}`);
-
-    // Unique directory name for the artifact
-    const dirname = `release-me-asset-${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
-
-    // Download artifact from GitHub
-    await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
-
-    // Upload files associated with the artifact to the GitHub Release
-    for (const file of fs.readdirSync(dirname)) {
-      const data = fs.readFileSync(path.join(dirname, file), { encoding: "utf8" });
-
-      await octokit.rest.repos.uploadReleaseAsset({
-        ...github.context.repo,
-        release_id: id,
-        name: file,
-        label: artifact,
-        data: data,
-      });
+  for (const asset of assets) {
+    core.info(`🔗 Uploading ${asset.label ? asset.label : asset.name}...`);
+    if (!fs.existsSync(asset.name)) {
+      throw new Error(`File ${asset.name} does not exist!`);
     }
-    core.endGroup();
+
+    const data = fs.readFileSync(asset.name, { encoding: "utf8" });
+
+    await octokit.rest.repos.uploadReleaseAsset({
+      ...github.context.repo,
+      release_id: id,
+      name: asset.name,
+      label: asset.label ? asset.label : asset.name,
+      data: data,
+    });
   }
 }
 
@@ -213,7 +240,11 @@ export async function run(): Promise<void> {
 
     core.info(`📦 Creating GitHub Release...`);
     const release = await createRelease(newVersion, commits);
-    await uploadArtifacts(release.id, core.getMultilineInput("artifacts") ?? []);
+    const files = [
+      ...(await downloadArtifacts(core.getMultilineInput("artifacts") ?? [])),
+      ...(core.getMultilineInput("files") ?? []).map(f => ({ name: f, label: f })),
+    ];
+    await uploadAssets(release.id, files);
 
     core.setOutput("release", JSON.stringify(release));
     core.setOutput("created", true);
