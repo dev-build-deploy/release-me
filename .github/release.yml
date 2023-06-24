@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+changelog:
+  exclude:
+    scopes: ["deps"]
+  categories:
+    - title: "💥 Breaking Changes"
+      increment: ["major"]
+    - title: "✨ New Features"
+      increment: ["minor"]
+    - title: "🐛 Bug Fixes"
+      increment: ["patch"]
+      exclude:
+        scopes: ["internal"]
+    - title: "📚 Documentation"
+      types: ["docs"]
+      scopes: ["api"]
