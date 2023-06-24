@@ -166,33 +166,33 @@ describe("Generate Changelog", () => {
   test("Example usecase", async () => {
     jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
-        "changelog":{
-          "exclude": {
-            "scopes": ["deps"]
+        changelog: {
+          exclude: {
+            scopes: ["deps"],
           },
-          "categories": [
+          categories: [
             {
-              "title": "💥 Breaking Changes",
-              "increment": ["major"]
+              title: "💥 Breaking Changes",
+              increment: ["major"],
             },
             {
-              "title": "✨ New Features",
-              "increment": ["minor"]
+              title: "✨ New Features",
+              increment: ["minor"],
             },
             {
-              "title": "🐛 Bug Fixes",
-              "increment": ["patch"],
-              "exclude": {
-                "scopes": ["internal"]
-              }
+              title: "🐛 Bug Fixes",
+              increment: ["patch"],
+              exclude: {
+                scopes: ["internal"],
+              },
             },
             {
-              "title": "📚 Documentation",
-              "types": ["docs"],
-              "scopes": ["api"]
-            }
-          ]
-        }
+              title: "📚 Documentation",
+              types: ["docs"],
+              scopes: ["api"],
+            },
+          ],
+        },
       };
     });
 
@@ -242,8 +242,7 @@ describe("Generate Changelog", () => {
         type: "docs",
         description: "this should not show up in the Release Notes",
       },
-    ]
-
+    ];
 
     const result = await changelog.generateChangelog(commits);
     const expectation = `## What's Changed
@@ -268,7 +267,7 @@ describe("Generate Changelog", () => {
 
 - Add basic description on configuration usage
 
-`
-    expect(result).toBe(expectation)
+`;
+    expect(result).toBe(expectation);
   });
 });
