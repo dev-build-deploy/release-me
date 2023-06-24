@@ -73,7 +73,7 @@ export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration |
   try {
     const { data: data } = await octokit.rest.repos.getContent({
       ...github.context.repo,
-      path: ".github/release.yml",
+      path: core.getInput("config"),
       ref: github.context.ref,
     });
 

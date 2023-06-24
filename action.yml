@@ -19,6 +19,11 @@ inputs:
   prefix:
     description: 'Prefix used for the release (eg. v)'
     required: false
+  
+  config:
+    description: 'Path to the Release configuration file, defaults to .github/release.yml'
+    required: false
+    default: '.github/release.yml'
 
 outputs:
   created:

@@ -14,7 +14,7 @@ A GitHub Action to create GitHub Releases based on the [Conventional Commits] si
 
 - Simple to use
 - Automatic creation of GitHub Releases
-- Configurable changelog
+- [Configurable changelog](#github-release-configuration)
 
 ## Usage
 
@@ -42,6 +42,7 @@ jobs:
         with:
           token: ${{ github.token }}
           prefix: v  # OPTIONAL; prefixes the Semantic Verion with v (e.g. v1.0.0)
+          config: .github/release.yml # OPTIONAL; path to a Release configuration
 
       - if: ${{ steps.release.outputs.created }}
         run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}
@@ -95,6 +96,7 @@ changelog:
 | --- | --- |
 | `created` | Set to `true` when a release was created, otherwise the output is not set |
 | `release` | [Release object](./src/release.ts) containing relevant information about the created release. Only set when `created` is set to `true`.|
+| `config`  | Path to the Release configuration, defaults to `.github/release.yml` | 
 
 ## Permissions
 
