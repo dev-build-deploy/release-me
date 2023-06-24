@@ -28,6 +28,10 @@ inputs:
   artifacts:
     description: 'Artifact names to include in the GitHub Release'
     required: false
+  
+  files:
+    description: 'Files to include in the GitHub Release'
+    required: false
 
 outputs:
   created:

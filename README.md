@@ -50,18 +50,26 @@ jobs:
 ```
 
 ## Uploading assets
-Currently, it is only possible to transfer build artifacts, uploaded in your current workflow, to your GitHub Release.
-
-This can be done by providing the `artifacts` input parameter, for ex.:
+ReleaseMe allows you to upload assets from both build artifacts (`artifacts:`) and local files (`files:`).
 
 ```yaml
+# Create an example file
+- run: echo "Example" > output.txt
+
+# Upload the output file as a build artifact
+- uses: actions/upload-artifact@v3
+  with:
+    name: output-as-artifact
+    path: output.txt
+
+# Create a GitHub Release with both the direct output file
+# and build artifact as asset
 - name: Run ReleaseMe
   uses: dev-build-deploy/release-me@v0
   with:
     token: ${{ github.token }}
-    artifacts: |
-      artifact Foo
-      artifact Bar
+    artifacts: output-as-artifact
+    files: output.txt
 ```
 
 ## GitHub Release Configuration
@@ -107,6 +115,7 @@ changelog:
 | `prefix` | NO | Prefix for the Semantic Version, MUST be one of `[A-Za-z0-9-.]` |
 | `config`  | NO | Path to the Release configuration, defaults to `.github/release.yml` | 
 | `artifacts` | NO | Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a GitHub Release asset |
+| `files` | NO | Multiline list of files (paths) to upload as a GitHub Release asset |
 
 ## Outputs
 
