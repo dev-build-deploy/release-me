@@ -14,6 +14,7 @@ A GitHub Action to create GitHub Releases based on the [Conventional Commits] si
 
 - Simple to use
 - Automatic creation of GitHub Releases
+- Management of [GitHub Release assets](#uploading-assets)
 - [Configurable changelog](#github-release-configuration)
 
 ## Usage
@@ -46,6 +47,21 @@ jobs:
 
       - if: ${{ steps.release.outputs.created }}
         run: echo ${{ fromJSON(steps.release.outputs.release).tag_name }}
+```
+
+## Uploading assets
+Currently, it is only possible to transfer build artifacts, uploaded in your current workflow, to your GitHub Release.
+
+This can be done by providing the `artifacts` input parameter, for ex.:
+
+```yaml
+- name: Run ReleaseMe
+  uses: dev-build-deploy/release-me@v0
+  with:
+    token: ${{ github.token }}
+    artifacts: |
+      artifact Foo
+      artifact Bar
 ```
 
 ## GitHub Release Configuration
@@ -85,18 +101,18 @@ changelog:
 
 ## Inputs
 
-| Key | Description |
-| --- | --- |
-| `token` | GitHub token used to access GitHub |
-| `prefix` | Prefix for the Semantic Version, MUST be one of `[A-Za-z0-9-.]` |
+| Key | Required | Description |
+| --- | --- | --- |
+| `token` | YES | GitHub token used to access GitHub |
+| `prefix` | NO | Prefix for the Semantic Version, MUST be one of `[A-Za-z0-9-.]` |
+| `config`  | NO | Path to the Release configuration, defaults to `.github/release.yml` | 
+| `artifacts` | NO | Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a GitHub Release asset |
 
 ## Outputs
 
-| Key | Description |
 | --- | --- |
 | `created` | Set to `true` when a release was created, otherwise the output is not set |
 | `release` | [Release object](./src/release.ts) containing relevant information about the created release. Only set when `created` is set to `true`.|
-| `config`  | Path to the Release configuration, defaults to `.github/release.yml` | 
 
 ## Permissions
 
