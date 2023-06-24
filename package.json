@@ -24,7 +24,7 @@
     "@actions/artifact": "^1.1.1",
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1",
-    "@dev-build-deploy/commit-it": "^0.2.1",
+    "@dev-build-deploy/commit-it": "^0.3.1",
     "@dev-build-deploy/version-it": "^0.1.4",
     "yaml": "^2.3.1"
   },
