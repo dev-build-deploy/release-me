@@ -24,6 +24,10 @@ inputs:
     description: 'Path to the Release configuration file, defaults to .github/release.yml'
     required: false
     default: '.github/release.yml'
+  
+  artifacts:
+    description: 'Artifact names to include in the GitHub Release'
+    required: false
 
 outputs:
   created:
