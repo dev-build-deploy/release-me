@@ -4,8 +4,12 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+import * as artifact from "@actions/artifact";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import * as fs from "fs";
+import * as path from "path";
+
 import { ISemVer, SemVer } from "@dev-build-deploy/version-it";
 import {
   ConventionalCommitError,
@@ -16,6 +20,39 @@ import {
 } from "@dev-build-deploy/commit-it";
 import { generateChangelog } from "./changelog";
 import { IReleaseObject } from "./release";
+
+/**
+ * Uploads the list of artifacts to the GitHub Release
+ * @param assets List of artifacts to upload
+ */
+async function uploadArtifacts(id: number, artifacts: string[]) {
+  const octokit = github.getOctokit(core.getInput("token"));
+  const client = artifact.create();
+
+  for (const artifact of artifacts) {
+    core.startGroup(`📡 Uploading artifact: ${artifact}`);
+
+    // Unique directory name for the artifact
+    const dirname = `release-me-asset-${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
+
+    // Download artifact from GitHub
+    await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
+
+    // Upload files associated with the artifact to the GitHub Release
+    for (const file of fs.readdirSync(dirname)) {
+      const data = fs.readFileSync(path.join(dirname, file), { encoding: "utf8" });
+
+      await octokit.rest.repos.uploadReleaseAsset({
+        ...github.context.repo,
+        release_id: id,
+        name: file,
+        label: artifact,
+        data: data,
+      });
+    }
+    core.endGroup();
+  }
+}
 
 /**
  * Retrieve GitHub Releases, sorted by SemVer
@@ -96,6 +133,14 @@ export function filterConventionalCommits(commits: ICommit[]): IConventionalComm
     .filter(c => c !== undefined) as IConventionalCommit[];
 }
 
+/**
+ * Creates a new GitHub Release, incl:
+ *   Generated Release Notes
+ *   Uploaded artifacts
+ * @param version
+ * @param commits
+ * @returns
+ */
 async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
   const octokit = github.getOctokit(core.getInput("token"));
 
@@ -109,14 +154,14 @@ async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
     target_commitish: github.context.ref,
   };
 
-  await octokit.rest.repos.createRelease({
+  const { data: release } = await octokit.rest.repos.createRelease({
     ...github.context.repo,
     ...releaseConfig,
     generate_release_notes: false,
     discussion_category_name: undefined,
   });
 
-  return releaseConfig;
+  return { id: release.id, ...releaseConfig };
 }
 
 /**
@@ -163,15 +208,16 @@ export async function run(): Promise<void> {
     }
     core.endGroup();
 
-    core.startGroup("📝 Creating GitHub Release");
     const prefix = core.getInput("prefix") ?? undefined;
     const newVersion = new SemVer(latestRelease.tag_name, prefix).increment(increment);
 
-    core.info(`Next version will be: ${newVersion}`);
+    core.info(`📦 Creating GitHub Release...`);
     const release = await createRelease(newVersion, commits);
+    await uploadArtifacts(release.id, core.getMultilineInput("artifacts") ?? []);
+
     core.setOutput("release", JSON.stringify(release));
     core.setOutput("created", true);
-    core.endGroup();
+    core.info(`✅ Created GitHub Release ${newVersion}!`);
   } catch (ex) {
     core.setFailed((ex as Error).message);
   }
