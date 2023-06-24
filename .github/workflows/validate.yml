@@ -7,10 +7,8 @@
 name: Validate Package
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
+  workflow_call:
 
 jobs:
   unit-tests:
