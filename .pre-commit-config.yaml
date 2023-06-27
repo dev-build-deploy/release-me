@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+# SPDX-License-Identifier: CC0-1.0
+
+repos:
+- repo: https://github.com/dev-build-deploy/commit-me
+  rev: v0.12.1
+  hooks:
+  - id: commit-me
