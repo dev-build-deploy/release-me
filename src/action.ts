@@ -10,16 +10,12 @@ import * as github from "@actions/github";
 import * as fs from "fs";
 import * as path from "path";
 
-import { ISemVer, SemVer } from "@dev-build-deploy/version-it";
-import {
-  ConventionalCommitError,
-  ICommit,
-  IConventionalCommit,
-  getCommit,
-  getConventionalCommit,
-} from "@dev-build-deploy/commit-it";
-import { generateChangelog } from "./changelog";
+import * as branching from "./branching";
+import { SemVer } from "@dev-build-deploy/version-it";
+import * as commitLib from "@dev-build-deploy/commit-it";
+import * as changelog from "./changelog";
 import { IReleaseObject } from "./release";
+import * as versioning from "./versioning";
 
 /**
  * Asset information
@@ -36,20 +32,20 @@ interface IAsset {
  * Downloads the list of artifacts
  * @param artifacts List of artifacts to download
  * @returns List of filepaths towards the downloaded artifacts
+ * @internal
  */
-async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
+export async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
   const client = artifact.create();
   const filepaths: IAsset[] = [];
   for (const artifact of artifacts) {
     core.startGroup(`📡 Downloading artifact: ${artifact}`);
 
     const dirname = `release-me-asset-${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
-    const resp = await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
-    console.log(resp);
+    await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
+
     for (const file of fs.readdirSync(dirname)) {
       filepaths.push({ name: path.join(dirname, file), label: artifact });
     }
-
     core.endGroup();
   }
 
@@ -85,21 +81,26 @@ async function uploadAssets(id: number, assets: IAsset[]) {
  * Retrieve GitHub Releases, sorted by SemVer
  * @returns List of releases
  */
-async function getReleases() {
+async function getReleases(branch: branching.IBranch, versionScheme: versioning.VersionScheme) {
   const octokit = github.getOctokit(core.getInput("token"));
-  const prefix = core.getInput("prefix") ?? undefined;
-
   const { data: releases } = await octokit.rest.repos.listReleases({ ...github.context.repo });
-  return releases
-    .filter(r => {
-      try {
-        new SemVer(r.tag_name, prefix);
-      } catch (error) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => new SemVer(a.tag_name, prefix).compareTo(new SemVer(b.tag_name, prefix)));
+
+  const sortedreleases = releases
+    .filter(r => versionScheme.isValid(r.tag_name))
+    .sort((a, b) =>
+      versioning.compareVersions(versionScheme.createVersion(a.tag_name), versionScheme.createVersion(b.tag_name))
+    );
+
+  if (branch.type === "release" && branch.modifier !== undefined) {
+    const modifier = branch.modifier;
+    const hotfixReleases = sortedreleases.filter(r => r.tag_name.startsWith(modifier));
+    if (hotfixReleases.length === 0) {
+      throw new Error("Incorrect release branch pattern, no releases found!");
+    }
+    return hotfixReleases;
+  }
+
+  return sortedreleases;
 }
 
 /**
@@ -107,7 +108,7 @@ async function getReleases() {
  * @param tag The tag to compare against
  * @returns List of commits
  */
-async function getChangesSinceRelease(tag: string): Promise<ICommit[]> {
+async function getChangesSinceRelease(tag: string): Promise<commitLib.ICommit[]> {
   const octokit = github.getOctokit(core.getInput("token"));
 
   const { data: commits } = await octokit.rest.repos.compareCommitsWithBasehead({
@@ -115,31 +116,7 @@ async function getChangesSinceRelease(tag: string): Promise<ICommit[]> {
     basehead: `refs/tags/${tag}...${github.context.sha}`,
   });
 
-  return commits.commits.map(c => getCommit({ hash: c.sha, message: c.commit.message }));
-}
-
-/**
- * Determines the increment type based on the provided Conventional Commits
- * @param commits
- * @returns The increment type ("major", "minor", "patch" or undefined)
- * @internal
- */
-export function determineIncrementType(commits: IConventionalCommit[]): keyof ISemVer | undefined {
-  const typeCount: { [key: string]: number } = { feat: 0, fix: 0 };
-
-  for (const commit of commits) {
-    try {
-      if (commit.breaking) return "major";
-      typeCount[commit.type]++;
-    } catch (error) {
-      if (!(error instanceof ConventionalCommitError)) throw error;
-    }
-  }
-
-  if (typeCount.feat > 0) return "minor";
-  if (typeCount.fix > 0) return "patch";
-
-  return;
+  return commits.commits.map(c => commitLib.getCommit({ hash: c.sha, message: c.commit.message }));
 }
 
 /**
@@ -148,16 +125,16 @@ export function determineIncrementType(commits: IConventionalCommit[]): keyof IS
  * @returns List of Conventional Commits
  * @internal
  */
-export function filterConventionalCommits(commits: ICommit[]): IConventionalCommit[] {
+export function filterConventionalCommits(commits: commitLib.ICommit[]): commitLib.IConventionalCommit[] {
   return commits
     .map(c => {
       try {
-        return getConventionalCommit(c);
+        return commitLib.getConventionalCommit(c);
       } catch (error) {
-        if (!(error instanceof ConventionalCommitError)) throw error;
+        if (!(error instanceof commitLib.ConventionalCommitError)) throw error;
       }
     })
-    .filter(c => c !== undefined) as IConventionalCommit[];
+    .filter(c => c !== undefined) as commitLib.IConventionalCommit[];
 }
 
 /**
@@ -168,15 +145,15 @@ export function filterConventionalCommits(commits: ICommit[]): IConventionalComm
  * @param commits
  * @returns
  */
-async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
+async function createRelease(version: versioning.Version, body: string) {
   const octokit = github.getOctokit(core.getInput("token"));
 
   const releaseConfig: IReleaseObject = {
     name: version.toString(),
-    body: await generateChangelog(commits),
+    body: body,
     draft: false,
-    prerelease: version.preRelease !== undefined,
-    make_latest: version.preRelease === undefined ? "true" : "false",
+    prerelease: version instanceof SemVer ? version.preRelease !== undefined : false,
+    make_latest: branching.getBranch().type === "default" ? "true" : "false",
     tag_name: version.toString(),
     target_commitish: github.context.ref,
   };
@@ -192,28 +169,18 @@ async function createRelease(version: SemVer, commits: IConventionalCommit[]) {
 }
 
 /**
- * Determines whether the current branch is the default branch.
- * @returns True if the current branch is the default branch, false otherwise
- */
-function isDefaultBranch() {
-  const currentBranch = github.context.ref.replace("refs/heads/", "");
-  return currentBranch === github.context.payload.repository?.default_branch;
-}
-
-/**
  * Main entry point for the GitHub Action.
  * @internal
  */
 export async function run(): Promise<void> {
   try {
     core.info("📄 ReleaseMe - GitHub Release Management");
-    if (!isDefaultBranch()) {
-      core.warning(`⚠️ Not on default branch, skipping...`);
-      return;
-    }
+
+    const branch = branching.getBranch();
+    const versionScheme = versioning.getVersionScheme();
 
     core.startGroup("🔍 Retrieving GitHub Releases");
-    const releases = await getReleases();
+    const releases = await getReleases(branch, versionScheme);
     if (releases.length === 0) {
       core.warning("⚠️ No releases found, skipping...");
       core.endGroup();
@@ -226,7 +193,7 @@ export async function run(): Promise<void> {
     core.info(`ℹ️ Changes since latest release: ${delta.length} commits`);
 
     const commits = filterConventionalCommits(delta);
-    const increment = determineIncrementType(commits);
+    const increment = versionScheme.determineIncrementType(commits);
 
     if (increment === undefined) {
       core.info("⚠️ No increment required, skipping...");
@@ -235,11 +202,11 @@ export async function run(): Promise<void> {
     }
     core.endGroup();
 
-    const prefix = core.getInput("prefix") ?? undefined;
-    const newVersion = new SemVer(latestRelease.tag_name, prefix).increment(increment);
+    const newVersion = versioning.incrementVersion(versionScheme.createVersion(latestRelease.tag_name), increment);
 
     core.info(`📦 Creating GitHub Release...`);
-    const release = await createRelease(newVersion, commits);
+    const body = await changelog.generateChangelog(versionScheme, commits);
+    const release = await createRelease(newVersion, body);
     const files = [
       ...(await downloadArtifacts(core.getMultilineInput("artifacts") ?? [])),
       ...(core.getMultilineInput("files") ?? []).map(f => ({ name: f, label: f })),

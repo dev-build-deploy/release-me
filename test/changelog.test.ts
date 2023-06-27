@@ -5,7 +5,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+import * as branching from "../src/branching";
 import * as changelog from "../src/changelog";
+import { SemVerScheme } from "../src/versioning";
 
 describe("Generate Changelog", () => {
   const commits = [
@@ -36,16 +38,22 @@ describe("Generate Changelog", () => {
     { hash: "0a0b0c0d", subject: "perf: improve performance", type: "perf", description: "improve performance" },
   ];
 
+  beforeEach(() => {
+    jest.spyOn(branching, "getBranch").mockImplementation(() => {
+      return { type: "default" };
+    });
+  });
+
   test("Breaking changes only", async () => {
     jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
-          categories: [{ title: "💥 Breaking Changes", increment: ["major"] }],
+          categories: [{ title: "💥 Breaking Changes", increment: ["MAJOR"] }],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -60,12 +68,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
-          categories: [{ title: "💥 Breaking Changes", increment: ["major"], types: ["feat"] }],
+          categories: [{ title: "💥 Breaking Changes", increment: ["MAJOR"], types: ["feat"] }],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -80,12 +88,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
-          categories: [{ title: "🐛 Bug Fixes", increment: ["patch"], scopes: ["core"] }],
+          categories: [{ title: "🐛 Bug Fixes", increment: ["PATCH"], scopes: ["core"] }],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -100,12 +108,12 @@ describe("Generate Changelog", () => {
     jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
-          categories: [{ title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } }],
+          categories: [{ title: "🐛 Bug Fixes", increment: ["PATCH"], exclude: { scopes: ["core"] } }],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -121,14 +129,14 @@ describe("Generate Changelog", () => {
       return {
         changelog: {
           categories: [
-            { title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } },
+            { title: "🐛 Bug Fixes", increment: ["PATCH"], exclude: { scopes: ["core"] } },
             { title: "📚 Documentation", types: ["docs"] },
           ],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -145,14 +153,14 @@ describe("Generate Changelog", () => {
         changelog: {
           exclude: { types: ["fix"] },
           categories: [
-            { title: "🐛 Bug Fixes", increment: ["patch"], exclude: { scopes: ["core"] } },
+            { title: "🐛 Bug Fixes", increment: ["PATCH"], exclude: { scopes: ["core"] } },
             { title: "📚 Documentation", types: ["docs"] },
           ],
         },
       };
     });
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -173,15 +181,15 @@ describe("Generate Changelog", () => {
           categories: [
             {
               title: "💥 Breaking Changes",
-              increment: ["major"],
+              increment: ["MAJOR"],
             },
             {
               title: "✨ New Features",
-              increment: ["minor"],
+              increment: ["MINOR"],
             },
             {
               title: "🐛 Bug Fixes",
-              increment: ["patch"],
+              increment: ["PATCH"],
               exclude: {
                 scopes: ["internal"],
               },
@@ -244,7 +252,7 @@ describe("Generate Changelog", () => {
       },
     ];
 
-    const result = await changelog.generateChangelog(commits);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
     const expectation = `## What's Changed
 
 ### 💥 Breaking Changes
