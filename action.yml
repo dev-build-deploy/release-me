@@ -17,7 +17,7 @@ inputs:
     required: false
   
   prefix:
-    description: 'Prefix used for the release (eg. v)'
+    description: 'Prefix used for the version (eg. v)'
     required: false
   
   config:
@@ -32,6 +32,11 @@ inputs:
   files:
     description: 'Files to include in the GitHub Release'
     required: false
+  
+  versioning:
+    description: Versioning scheme to apply
+    required: false
+    default: 'semver'
 
 outputs:
   created:

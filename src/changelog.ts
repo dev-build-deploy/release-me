@@ -5,12 +5,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 import { IConventionalCommit } from "@dev-build-deploy/commit-it";
-import { ISemVer } from "@dev-build-deploy/version-it";
-import { determineIncrementType } from "./action";
 import * as thisModule from "./changelog";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import YAML from "yaml";
+import { SemVerIncrement } from "@dev-build-deploy/version-it/lib/semver";
+import { VersionScheme } from "./versioning";
+import { CalVerIncrement } from "@dev-build-deploy/version-it";
 
 /**
  * Exclude configuration
@@ -20,7 +21,7 @@ import YAML from "yaml";
  * @member scopes Exclude commits from the changelog based on the scope
  */
 interface IExclude {
-  increment?: (keyof ISemVer)[];
+  increment?: (SemVerIncrement | CalVerIncrement)[];
   types?: string[];
   scopes?: string[];
 }
@@ -37,31 +38,18 @@ interface IExclude {
  * @member changelog.categories.scopes Scopes to include in the category
  * @member changelog.categories.exclude Exclude commits from the category
  */
-interface IReleaseConfiguration {
+export interface IReleaseConfiguration {
   changelog: {
     exclude?: IExclude;
     categories: {
       title: string;
-      increment?: (keyof ISemVer | "*")[];
+      increment?: (SemVerIncrement | CalVerIncrement | "*")[];
       types?: string[];
       scopes?: string[];
       exclude?: IExclude;
     }[];
   };
 }
-
-/**
- * Default configuration used when no configuration is found in the repository
- */
-const defaultConfiguration: IReleaseConfiguration = {
-  changelog: {
-    categories: [
-      { title: "💥 Breaking Changes", increment: ["major"] },
-      { title: "✨ New Features", increment: ["minor"] },
-      { title: "🐛 Bug Fixes", increment: ["patch"] },
-    ],
-  },
-};
 
 /**
  * Retrieve the configuration from the repository (.github/release.yml)
@@ -97,8 +85,8 @@ export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration |
  *
  * @return Changelog configuration
  */
-export async function getConfiguration(): Promise<IReleaseConfiguration> {
-  const config = (await thisModule.getConfigurationFromAPI()) ?? defaultConfiguration;
+export async function getConfiguration(versionScheme: VersionScheme): Promise<IReleaseConfiguration> {
+  const config = (await thisModule.getConfigurationFromAPI()) ?? versionScheme.defaultConfiguration;
 
   config.changelog.categories.forEach(category => {
     if (category.increment === undefined) category.increment = ["*"];
@@ -124,17 +112,17 @@ function firstCharToUpperCase(value: string) {
  * @param commits Conventional Commits part of the Changelog
  * @returns Changelog in Markdown format
  */
-export async function generateChangelog(commits: IConventionalCommit[]) {
+export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]) {
   const isWildcard = (value?: string[]) => isMatch(value, "*");
   const isMatch = (value?: string[], item?: string) =>
     item !== undefined && value !== undefined && value.includes(item);
 
-  const config = await getConfiguration();
+  const config = await getConfiguration(versionScheme);
   const title = "## What's Changed";
   const changelog = `${title}\n\n${config.changelog?.categories
     ?.map(category => {
       const categoryCommits = commits.filter(commit => {
-        const incrementType = determineIncrementType([commit]);
+        const incrementType = versionScheme.determineIncrementType([commit]);
 
         const hasValidIncrement =
           (isWildcard(category.increment) || isMatch(category.increment, incrementType)) &&
