@@ -200,7 +200,7 @@ gitGraph
 
 You can use Calendar Versioning for your releases, using the following predefined [CalVer] format:
 
-`YYYY.0W.MICRO[-MODIFIER]`
+`YYYY.0M.MICRO[-MODIFIER]`
 
 | Item | Description |
 | --- | --- |
