@@ -87,11 +87,11 @@ changelog:
       - deps
   categories:
     - title: "💥 Breaking Changes"
-      increment: ["major"]
+      increment: ["MAJOR"]
     - title: "✨ New Features"
-      increment: ["minor"]
+      increment: ["MINOR"]
     - title: "🐛 Bug Fixes"
-      increment: ["patch"]
+      increment: ["PATCH"]
       exclude:
         scopes: ["internal"]
     - title: "📚 Documentation"
