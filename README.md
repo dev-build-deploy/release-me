@@ -6,14 +6,16 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # ReleaseMe - GitHub Release Management
 
-A GitHub Action to automate versioning using create GitHub Releases;
+A GitHub Action to automate release management using GitHub Releases;
 
 ![Example](./docs/example.png)
 
 ## Features
 
-- Automatic [creation of GitHub Releases](#basic-usage)
-- Supports [Semantic- and Calendar- Versioning strategies](./docs/versioning-strategies.md), including straightforward release branching support
+- [Creation of GitHub Releases](#basic-usage) with automatic version increments:
+  - [Semantic Versioning](./docs/versioning-strategies.md#semantic-versioning) with [Conventional Commits]
+  - [Calendar Versioning](./docs/versioning-strategies.md#calendar-versioning) using `YYYY.0M.MICRO` format.
+- Straightforward release branching support
 - Management of [GitHub Release assets](./docs/asset-management.md)
 - [Configurable changelog](./docs/configuration.md)
 - [Accessing GitHub Release information](./docs/get-release.md)
