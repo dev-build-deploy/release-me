@@ -259,21 +259,31 @@ describe("Increment version (CalVer)", () => {
       return { type: "default" };
     });
 
-    expect(versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "CALENDAR").toString()).toBe("2023.06.0");
-  })
+    expect(
+      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "CALENDAR").toString()
+    ).toBe("2023.06.0");
+  });
 
   test("Main Branch (same date)", () => {
     jest.spyOn(branching, "getBranch").mockImplementation(() => {
       return { type: "default" };
     });
-    expect(versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), "CALENDAR").toString()).toBe("2023.06.1");
-  })
+    expect(
+      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), "CALENDAR").toString()
+    ).toBe("2023.06.1");
+  });
 
   test("Release Branch", () => {
     jest.spyOn(branching, "getBranch").mockImplementation(() => {
       return { type: "release", modifier: "2023.06" };
     });
-    expect(versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "MODIFIER").toString()).toBe("2023.05.0-hotfix.1");
-    expect(versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0-hotfix.1"), "MODIFIER").toString()).toBe("2023.05.0-hotfix.2");
-  })
-})
+    expect(
+      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "MODIFIER").toString()
+    ).toBe("2023.05.0-hotfix.1");
+    expect(
+      versioning
+        .incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0-hotfix.1"), "MODIFIER")
+        .toString()
+    ).toBe("2023.05.0-hotfix.2");
+  });
+});

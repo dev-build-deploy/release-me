@@ -4,78 +4,16 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-import * as artifact from "@actions/artifact";
+import * as assets from "./assets";
+import * as branching from "./branching";
+import * as changelog from "./changelog";
+import * as commitLib from "@dev-build-deploy/commit-it";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as fs from "fs";
-import * as path from "path";
-
-import * as branching from "./branching";
-import { SemVer } from "@dev-build-deploy/version-it";
-import * as commitLib from "@dev-build-deploy/commit-it";
-import * as changelog from "./changelog";
-import { IReleaseObject } from "./release";
 import * as versioning from "./versioning";
 
-/**
- * Asset information
- * @interface IAsset
- * @member name The filename (path) of the asset
- * @member label The label of the asset
- */
-interface IAsset {
-  name: string;
-  label?: string;
-}
-
-/**
- * Downloads the list of artifacts
- * @param artifacts List of artifacts to download
- * @returns List of filepaths towards the downloaded artifacts
- * @internal
- */
-export async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
-  const client = artifact.create();
-  const filepaths: IAsset[] = [];
-  for (const artifact of artifacts) {
-    core.startGroup(`📡 Downloading artifact: ${artifact}`);
-
-    const dirname = `release-me-asset-${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
-    await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
-
-    for (const file of fs.readdirSync(dirname)) {
-      filepaths.push({ name: path.join(dirname, file), label: artifact });
-    }
-    core.endGroup();
-  }
-
-  return filepaths;
-}
-
-/**
- * Uploads the list of artifacts to the GitHub Release
- * @param assets List of artifacts to upload
- */
-async function uploadAssets(id: number, assets: IAsset[]) {
-  const octokit = github.getOctokit(core.getInput("token"));
-
-  for (const asset of assets) {
-    core.info(`🔗 Uploading ${asset.label ? asset.label : asset.name}...`);
-    if (!fs.existsSync(asset.name)) {
-      throw new Error(`File ${asset.name} does not exist!`);
-    }
-
-    const data = fs.readFileSync(asset.name, { encoding: "utf8" });
-
-    await octokit.rest.repos.uploadReleaseAsset({
-      ...github.context.repo,
-      release_id: id,
-      name: asset.name,
-      label: asset.label ? asset.label : asset.name,
-      data: data,
-    });
-  }
-}
+import { SemVer } from "@dev-build-deploy/version-it";
+import { IReleaseObject } from "./release";
 
 /**
  * Retrieve GitHub Releases, sorted by SemVer
@@ -146,6 +84,7 @@ export function filterConventionalCommits(commits: commitLib.ICommit[]): commitL
  * @returns
  */
 async function createRelease(version: versioning.Version, body: string) {
+  core.info(`🎁 Creating GitHub Release ${version.toString()}...`);
   const octokit = github.getOctokit(core.getInput("token"));
 
   const releaseConfig: IReleaseObject = {
@@ -193,6 +132,7 @@ export async function run(): Promise<void> {
     core.info(`ℹ️ Changes since latest release: ${delta.length} commits`);
 
     const commits = filterConventionalCommits(delta);
+    core.info(`ℹ️ Conventional Commits since latest release: ${commits.length} commits`);
     const increment = versionScheme.determineIncrementType(commits);
 
     if (increment === undefined) {
@@ -204,14 +144,11 @@ export async function run(): Promise<void> {
 
     const newVersion = versioning.incrementVersion(versionScheme.createVersion(latestRelease.tag_name), increment);
 
-    core.info(`📦 Creating GitHub Release...`);
+    core.startGroup(`📦 Creating GitHub Release...`);
     const body = await changelog.generateChangelog(versionScheme, commits);
     const release = await createRelease(newVersion, body);
-    const files = [
-      ...(await downloadArtifacts(core.getMultilineInput("artifacts") ?? [])),
-      ...(core.getMultilineInput("files") ?? []).map(f => ({ name: f, label: f })),
-    ];
-    await uploadAssets(release.id, files);
+    await assets.updateAssets(release.id);
+    core.endGroup();
 
     core.setOutput("release", JSON.stringify(release));
     core.setOutput("created", true);

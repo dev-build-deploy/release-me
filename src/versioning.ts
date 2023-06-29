@@ -149,7 +149,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
     switch (incrementType) {
       case "CALENDAR":
         if (newVersion.major === version.major && newVersion.minor === version.minor) {
-          return version.increment("MICRO")
+          return version.increment("MICRO");
         }
         break;
       case "MODIFIER":
