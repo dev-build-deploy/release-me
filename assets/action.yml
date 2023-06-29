@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-name: 'ReleaseMe - GitHub Release Management'
+name: 'ReleaseMe - Update GitHub Release Assets'
 author: 'Kevin de Jong'
 description: >
-  Managing GitHub releases using Conventional Commits.
+  Uploads (or updates) assets to a GitHub Release.
 
 branding:
   icon: 'code'  
@@ -16,15 +16,6 @@ inputs:
     description: 'GitHub token used to access GitHub (eg. github.token)'
     required: false
   
-  prefix:
-    description: 'Prefix used for the version (eg. v)'
-    required: false
-  
-  config:
-    description: 'Path to the Release configuration file, defaults to .github/release.yml'
-    required: false
-    default: '.github/release.yml'
-  
   artifacts:
     description: 'Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a GitHub Release asset'
     required: false
@@ -32,19 +23,19 @@ inputs:
   files:
     description: 'Multiline list of files (paths) to upload as a GitHub Release asset'
     required: false
-  
-  versioning:
-    description: Versioning scheme to apply
+
+  remove:
+    description: 'Multiline list of GitHub Asset label to remove from the GitHub Release assets'
     required: false
-    default: 'semver'
-
-outputs:
-  created:
-    description: 'Boolean indicating if a release was created'
-
-  release:
-    description: 'JSON object containing the release information'
+  
+  download:
+    description: 'Multiline list of GitHub Asset labels to download from the GitHub Release'
+    required: false
+  
+  release-id:
+    description: 'Release ID associated with the GitHub Release to update'
+    required: true
 
 runs:
   using: 'node16'
-  main: 'lib/main/index.js'
+  main: '../lib/assets/index.js'

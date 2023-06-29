@@ -113,6 +113,8 @@ function firstCharToUpperCase(value: string) {
  * @returns Changelog in Markdown format
  */
 export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]) {
+  core.info("📓 Generating Release Notes...");
+
   const isWildcard = (value?: string[]) => isMatch(value, "*");
   const isMatch = (value?: string[], item?: string) =>
     item !== undefined && value !== undefined && value.includes(item);
