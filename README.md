@@ -16,6 +16,7 @@ A GitHub Action to automate versioning using create GitHub Releases;
 - Supports [Semantic- and Calendar- Versioning strategies](./docs/versioning-strategies.md), including straightforward release branching support
 - Management of [GitHub Release assets](./docs/asset-management.md)
 - [Configurable changelog](./docs/configuration.md)
+- [Accessing GitHub Release information](./docs/get-release.md)
 
 ## Basic Usage
 
@@ -28,6 +29,7 @@ on:
   push:
     branches:
       - main
+      - release/*
 
 permissions:
   contents: write

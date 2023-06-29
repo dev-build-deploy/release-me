@@ -49,7 +49,7 @@ async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
  *
  * @param id The GitHub Release identifier
  */
-export async function removeAssets(id: number) {
+export async function removeAssets(id: number): Promise<void> {
   const assets = (core.getMultilineInput("remove") ?? []).map(f => ({ name: f, label: f }));
 
   const octokit = github.getOctokit(core.getInput("token"));
@@ -81,7 +81,7 @@ export async function removeAssets(id: number) {
  * @param id The GitHub Release identifier
  * @internal
  */
-export async function updateAssets(id: number) {
+export async function updateAssets(id: number): Promise<void> {
   const assets = [
     ...(await downloadArtifacts(core.getMultilineInput("artifacts") ?? [])),
     ...(core.getMultilineInput("files") ?? []).map(f => ({ name: f, label: f })),
@@ -122,7 +122,7 @@ export async function updateAssets(id: number) {
  * @param id The GitHub Release identifier
  * @param assets List of assets to download
  */
-export async function downloadAssets(id: number) {
+export async function downloadAssets(id: number): Promise<void> {
   const assets = (core.getMultilineInput("download") ?? []).map(f => ({ name: f, label: f }));
 
   const octokit = github.getOctokit(core.getInput("token"));

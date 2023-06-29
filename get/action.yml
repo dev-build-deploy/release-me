@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: 'ReleaseMe - Get (latest) GitHub Release'
+author: 'Kevin de Jong'
+description: >
+  Retrieves the (latest) GitHub Release associated with the current branch
+
+branding:
+  icon: 'code'
+  color: 'white'
+
+inputs:
+  token:
+    description: 'GitHub token used to access GitHub (eg. github.token)'
+    required: false
+
+  versioning:
+    description: Versioning scheme to apply
+    required: false
+    default: 'semver'
+
+  tag:
+    description: 'GitHub Release to retrieve (by tag)'
+    required: false
+    default: 'latest'
+
+outputs:
+  release:
+    description: 'JSON object containing the GitHub Release information'
+
+runs:
+  using: 'node16'
+  main: '../lib/get/index.js'
