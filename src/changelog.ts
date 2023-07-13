@@ -75,6 +75,7 @@ export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration |
     }
     core.info("No release configuration found, using default configuration");
   }
+  return;
 }
 
 /**
@@ -148,6 +149,8 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: I
         return `### ${category.title}\n\n${categoryCommits
           .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
           .join("\n")}\n\n`;
+
+      return;
     })
     .join("\n")}`;
 

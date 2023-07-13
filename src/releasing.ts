@@ -8,10 +8,12 @@ import * as branching from "./branching";
 import * as commit from "@dev-build-deploy/commit-it";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as octokit from "@octokit/plugin-rest-endpoint-methods";
 import * as versioning from "./versioning";
 
+import type { components as octokitComponents } from "@octokit/openapi-types";
 import { SemVer } from "@dev-build-deploy/version-it";
+
+type Release = octokitComponents["schemas"]["release"];
 
 /**
  * Creates a new GitHub Release, incl:
@@ -21,13 +23,9 @@ import { SemVer } from "@dev-build-deploy/version-it";
  * @param commits
  * @returns
  */
-export async function createRelease(
-  version: versioning.Version,
-  body: string
-): Promise<octokit.RestEndpointMethodTypes["repos"]["createRelease"]["response"]["data"]> {
+export async function createRelease(version: versioning.Version, body: string): Promise<Release> {
   core.info(`🎁 Creating GitHub Release ${version.toString()}...`);
   const octokit = github.getOctokit(core.getInput("token"));
-
   const { data: release } = await octokit.rest.repos.createRelease({
     ...github.context.repo,
     name: version.toString(),
@@ -49,9 +47,7 @@ export async function createRelease(
  * @param version
  * @returns
  */
-export async function getRelease(
-  version: string
-): Promise<octokit.RestEndpointMethodTypes["repos"]["createRelease"]["response"]["data"]> {
+export async function getRelease(version: string): Promise<Release> {
   const octokit = github.getOctokit(core.getInput("token"));
   const { data: release } = await octokit.rest.repos.getReleaseByTag({ ...github.context.repo, tag: version });
   return release;
@@ -63,7 +59,7 @@ export async function getRelease(
  */
 async function getReleases(branch: branching.IBranch, versionScheme: versioning.VersionScheme) {
   const octokit = github.getOctokit(core.getInput("token"));
-  const releases: octokit.RestEndpointMethodTypes["repos"]["listReleases"]["response"]["data"] = [];
+  const releases: Release[] = [];
 
   for await (const page of octokit.paginate.iterator(octokit.rest.repos.listReleases, {
     ...github.context.repo,
@@ -99,7 +95,7 @@ export async function getLatestRelease(
   branch: branching.IBranch,
   versionScheme: versioning.VersionScheme
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<octokit.RestEndpointMethodTypes["repos"]["createRelease"]["response"]["data"] | undefined> {
+): Promise<Release | undefined> {
   core.info("🔍 Retrieving GitHub Releases");
   const releases = await getReleases(branch, versionScheme);
   if (releases.length === 0) {
