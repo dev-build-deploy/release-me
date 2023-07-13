@@ -1,13 +1,36 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    /* Basic Options */
+    "incremental": true,
+    "target": "ES2019",
     "module": "commonjs",
-    //"declaration": true,
+    "lib": ["ES2019"],
+    "allowJs": true,
+    "checkJs": true,
+    "sourceMap": true,
     "outDir": "./lib",
+    /* Strict Type-Checking Options */
     "strict": true,
+
+    /* Additional Checks */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Module Resolution Options */
+    "moduleResolution": "node",
+    "types": ["jest", "node"],
     "esModuleInterop": true,
     "stripInternal": true,
+
+    /* Advanced Options */
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "pretty": false,
+    "skipLibCheck": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "test/*"]
+  "include": ["src/", "test/*.ts"],
+  "compileOnSave": false,
+  "exclude": ["node_modules"]
 }

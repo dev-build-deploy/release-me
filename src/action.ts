@@ -26,6 +26,8 @@ export function filterConventionalCommits(commits: commitLib.ICommit[]): commitL
       } catch (error) {
         if (!(error instanceof commitLib.ConventionalCommitError)) throw error;
       }
+
+      return;
     })
     .filter(c => c !== undefined) as commitLib.IConventionalCommit[];
 }

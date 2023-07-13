@@ -40,7 +40,7 @@ describe("Generate Changelog", () => {
 
   beforeEach(() => {
     jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "default" };
+      return { type: "default" } as branching.IBranch;
     });
   });
 

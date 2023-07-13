@@ -25,7 +25,7 @@ export async function run(): Promise<void> {
       requestedVersion === "latest"
         ? await releasing.getLatestRelease(branch, versionScheme)
         : await releasing.getRelease(requestedVersion);
-    
+
     if (release === undefined) return;
 
     core.setOutput("release", JSON.stringify(release));
