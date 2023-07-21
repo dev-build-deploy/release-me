@@ -1,6 +1,5 @@
 /*
 SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
-
 SPDX-License-Identifier: CC0-1.0
 */
 
