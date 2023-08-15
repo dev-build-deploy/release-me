@@ -126,9 +126,9 @@ describe("Determine bump type (default branch)", () => {
 
   test("Added Feature", () => {
     const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
+      { hash: "0a0b0c0d", subject: "feat(login): add support google oauth (#12)", type: "feat", scope: "login", description: "add support google oauth (#12)" },
       { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" }
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -208,7 +208,7 @@ describe("Determine bump type (release branch)", () => {
 
   test("Added Feature", () => {
     const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
+      { hash: "0a0b0c0d", subject: "feat(login): add support google oauth (#12)", type: "feat", scope: "login", description: "add support google oauth (#12)" },
       { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
       { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
     ];
