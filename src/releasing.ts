@@ -13,6 +13,7 @@ import type { components as octokitComponents } from "@octokit/openapi-types";
 import { SemVer } from "@dev-build-deploy/version-it";
 
 type Release = octokitComponents["schemas"]["release"];
+type Commit = octokitComponents["schemas"]["commit"];
 
 /**
  * Creates a new GitHub Release, incl:
@@ -111,11 +112,14 @@ export async function getLatestRelease(
  */
 export async function getChangesSinceRelease(tag: string): Promise<commit.ICommit[]> {
   const octokit = github.getOctokit(core.getInput("token"));
+  const commits: Commit[] = [];
 
-  const { data: commits } = await octokit.rest.repos.compareCommitsWithBasehead({
+  for await (const response of octokit.paginate.iterator(octokit.rest.repos.compareCommitsWithBasehead, {
     ...github.context.repo,
     basehead: `refs/tags/${tag}...${github.context.sha}`,
-  });
+  })) {
+    commits.push(...response.data.commits);
+  }
 
-  return commits.commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
+  return commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
 }
