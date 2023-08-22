@@ -67,6 +67,18 @@ describe("Compare versions", () => {
   });
 });
 
+describe("Initial version", () => {
+  test("SemVer", () => {
+    const version = new versioning.SemVerScheme().initialVersion();
+    expect(version).toBeInstanceOf(SemVer);
+  })
+
+  test("CalVer", () => {
+    const version = new versioning.CalVerScheme().initialVersion();
+    expect(version).toBeInstanceOf(CalVer);
+  })
+})
+
 describe("Create version", () => {
   test("SemVer", () => {
     const version = new versioning.SemVerScheme().createVersion("9.1.0");

@@ -27,6 +27,7 @@ export abstract class VersionScheme {
   abstract determineIncrementType(commits: IConventionalCommit[]): VersionIncrement | undefined;
   abstract isValid(version: string): boolean;
   abstract createVersion(version: string): Version;
+  abstract initialVersion(): Version;
 }
 
 /**
@@ -44,6 +45,11 @@ export class SemVerScheme extends VersionScheme {
       ],
     },
   };
+
+  initialVersion(): SemVer {
+    const prefix = core.getInput("prefix") ?? undefined;
+    return new SemVer(undefined, prefix);
+  }
 
   createVersion(version: string): SemVer {
     const prefix = core.getInput("prefix") ?? undefined;
@@ -103,6 +109,11 @@ export class CalVerScheme extends VersionScheme {
       categories: [{ title: "✨ New Features", increment: ["*"] }],
     },
   };
+
+  initialVersion(): Version {
+    const prefix = core.getInput("prefix") ?? undefined;
+    return new CalVer("YYYY.0M.MICRO", undefined, prefix);
+  }
 
   createVersion(version: string): CalVer {
     const prefix = core.getInput("prefix") ?? undefined;
