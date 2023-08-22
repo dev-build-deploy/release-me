@@ -41,18 +41,30 @@ export async function run(): Promise<void> {
 
     const branch = branching.getBranch();
     const versionScheme = versioning.getVersionScheme();
-    const latestRelease = await releasing.getLatestRelease(branch, versionScheme);
-    if (latestRelease === undefined) {
-      return;
-    }
 
     core.startGroup("🔍 Determining increment type");
-    core.info(`ℹ️ Latest release: ${latestRelease.tag_name}`);
-    const delta = await releasing.getChangesSinceRelease(latestRelease.tag_name);
-    core.info(`ℹ️ Changes since latest release: ${delta.length} commits`);
+    const latestRelease = await releasing.getLatestRelease(branch, versionScheme);
+    let latestRef: string;
+    let latestVersion: versioning.Version;
+
+    if (latestRelease) {
+      core.info(`ℹ️ Latest release: ${latestRelease.tag_name}`);
+      latestRef = latestRelease.tag_name;
+      latestVersion = versionScheme.createVersion(latestRef);
+    } else {
+      // NOTE: Postponed this expensive request for the case where there is no release determined yet
+      const initialCommit = await releasing.getInitialCommit();
+
+      core.info(`ℹ️ Creating release based on commit SHA: ${initialCommit.hash}`);
+      latestRef = initialCommit.hash;
+      latestVersion = versionScheme.initialVersion();
+    }
+
+    const delta = await releasing.getChangesSince(latestRef);
+    core.info(`ℹ️ Changes since: ${delta.length} commits`);
 
     const commits = filterConventionalCommits(delta);
-    core.info(`ℹ️ Conventional Commits since latest release: ${commits.length} commits`);
+    core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
 
     const increment = versionScheme.determineIncrementType(commits);
 
@@ -63,7 +75,7 @@ export async function run(): Promise<void> {
     }
     core.endGroup();
 
-    const newVersion = versioning.incrementVersion(versionScheme.createVersion(latestRelease.tag_name), increment);
+    const newVersion = versioning.incrementVersion(latestVersion, increment);
 
     core.startGroup(`📦 Creating GitHub Release...`);
     const body = await changelog.generateChangelog(versionScheme, commits);

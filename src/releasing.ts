@@ -106,20 +106,39 @@ export async function getLatestRelease(
 }
 
 /**
- * Retrieve the commits since the provided tag
- * @param tag The tag to compare against
+ * Retrieve the commits since the provided ref
+ * @param ref The git ref to compare against
  * @returns List of commits
  */
-export async function getChangesSinceRelease(tag: string): Promise<commit.ICommit[]> {
+export async function getChangesSince(ref: string): Promise<commit.ICommit[]> {
   const octokit = github.getOctokit(core.getInput("token"));
   const commits: Commit[] = [];
 
   for await (const response of octokit.paginate.iterator(octokit.rest.repos.compareCommitsWithBasehead, {
     ...github.context.repo,
-    basehead: `refs/tags/${tag}...${github.context.sha}`,
+    basehead: `${ref}...${github.context.sha}`,
   })) {
     commits.push(...response.data.commits);
   }
 
   return commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
+}
+
+/**
+ * Determines the initial commit in the current branch
+ * @returns The initial commit
+ */
+export async function getInitialCommit(): Promise<commit.ICommit> {
+  const octokit = github.getOctokit(core.getInput("token"));
+  const commits: Commit[] = [];
+
+  for await (const response of octokit.paginate.iterator(octokit.rest.repos.listCommits, {
+    ...github.context.repo,
+    sha: github.context.ref.replace("refs/heads/", ""),
+  })) {
+    commits.push(...response.data);
+  }
+
+  const commitMap = commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
+  return commitMap[commitMap.length - 1];
 }
