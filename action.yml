@@ -49,6 +49,11 @@ inputs:
   increment-type:
     description: 'Increment type to apply to the version'
     required: false
+  
+  create-release:
+    description: 'Create the GitHub Release, can be set to `false` to perform a dry run (i.e. determine the previous and incremented version)'
+    required: false
+    default: true
 
 outputs:
   created:
