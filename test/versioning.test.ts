@@ -255,6 +255,50 @@ describe("Determine bump type (release branch)", () => {
   });
 });
 
+describe("Increment version with fallback", () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2023, 5, 12));
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  test("SemVer", () => {
+    jest.spyOn(branching, "getBranch").mockImplementation(() => {
+      return { type: "default" };
+    });
+
+    expect(
+      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MINOR"]).toString()
+    ).toBe("0.2.0-dev.1")
+
+    expect(
+      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.2.0-dev.1"), ["PRERELEASE", "MINOR"]).toString()
+    ).toBe("0.2.0-dev.2")
+
+    expect(
+      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MAJOR"]).toString()
+    ).toBe("1.0.0-dev.1")
+
+    expect(
+      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0-dev.1"), ["PRERELEASE", "MAJOR"]).toString()
+    ).toBe("0.1.0-dev.2")
+  })
+
+  test("CalVer", () => {
+    jest.spyOn(branching, "getBranch").mockImplementation(() => {
+      return { type: "default" };
+    });
+    
+    // NOTE: This is a bug in sorting CalVer in @dev-build-deploy/version-it; it should be 2023.06.1-hotfix.1
+    expect(
+      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), ["MODIFIER", "CALENDAR"]).toString()
+    ).toBe("2023.06.0-hotfix.1")
+  });
+});
+
 describe("Increment version (CalVer)", () => {
   beforeAll(() => {
     jest.useFakeTimers();

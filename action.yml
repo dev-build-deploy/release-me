@@ -41,6 +41,10 @@ inputs:
     description: 'External Release Notes file to include in the GitHub Release'
     required: false
 
+  increment-type:
+    description: 'Increment type to apply to the version'
+    required: false
+
 outputs:
   created:
     description: 'Boolean indicating if a release was created'

@@ -60,26 +60,38 @@ export async function run(): Promise<void> {
       latestVersion = versionScheme.initialVersion();
     }
 
-    const delta = await releasing.getChangesSince(latestRef);
-    core.info(`ℹ️ Changes since: ${delta.length} commits`);
+    const increments: versioning.VersionIncrement[] = [];
+    const commits: commitLib.IConventionalCommit[] = [];
+    if (core.getInput("increment-type")) {
+      increments.push(...core.getInput("increment-type").split("|").map(inc => versioning.getIncrementType(versionScheme, inc)));
+    } else {
+      const delta = await releasing.getChangesSince(latestRef);
+      core.info(`ℹ️ Changes since: ${delta.length} commits`);
+  
+      commits.push(...filterConventionalCommits(delta));
+      core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
 
-    const commits = filterConventionalCommits(delta);
-    core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
-
-    const increment = versionScheme.determineIncrementType(commits);
-
-    if (increment === undefined) {
-      core.info("⚠️ No increment required, skipping...");
-      core.endGroup();
-      return;
+      const increment = versionScheme.determineIncrementType(commits)
+      if (increment === undefined) {
+        core.info("⚠️ No increment required, skipping...");
+        core.endGroup();
+        return;
+      }
+      increments.push(increment);
     }
     core.endGroup();
 
-    const newVersion = versioning.incrementVersion(latestVersion, increment);
+    core.setOutput("previous-version", latestVersion.toString());
+    const newVersion = versioning.incrementVersion(latestVersion, increments);
+    core.setOutput("incremented-version", newVersion.toString());
+
+    if (!core.getBooleanInput("create-release")) {
+      return;
+    }
 
     core.startGroup(`📦 Creating GitHub Release...`);
 
-    const body = core.getInput("release-notes", undefined)
+    const body = core.getInput("release-notes")
       ? await changelog.readChangelogFromFile(core.getInput("release-notes"))
       : await changelog.generateChangelog(versionScheme, commits);
 
