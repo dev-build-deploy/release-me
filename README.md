@@ -66,18 +66,21 @@ jobs:
 | `prefix` | NO | Prefix for the version, MUST be one of `[A-Za-z0-9-.]` |
 | `config`  | NO | Path to the [Release configuration](./docs/configuration.md), defaults to `.github/release.yml` | 
 | `artifacts` | NO | Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a [GitHub Release asset](./docs/asset-management.md) |
+| `create-release` | NO | Create the GitHub Release, can be set to `false` to perform a dry run (i.e. determine the previous and incremented version), defaults to `true`. |
+| `draft` | NO | Create a GitHub Release in `draft` status, defaults to `false` |
 | `files` | NO | Multiline list of files (paths) to upload as a [GitHub Release asset](./docs/asset-management.md) |
-| `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
-| `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |
 | `increment-type` | NO | Enforce a specific increment type, please refer to the [Versioning Strategies](./docs/versioning-strategies.md) for more details |
-| `draft` | NO | Create a GitHub Release in `draft` status |
+| `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |
+| `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
 
 ## Outputs
 
 | Key | Description |
 | --- | --- |
 | `created` | Set to `true` when a release was created, otherwise the output is not set |
-| `release` | [Release object](./src/release.ts) containing relevant information about the created release. Only set when `created` is set to `true`.|
+| `release` | [Release object](./src/release.ts) containing relevant information about the created release. Only set when `created` is set to `true`. |
+| `previous-version` | The version of the GitHub Release prior to the current state |
+| `incremented-version` | The incremented version as used for the GitHub Release |
 
 ## Permissions
 
