@@ -36,6 +36,11 @@ inputs:
     description: Versioning scheme to apply
     required: false
     default: 'semver'
+
+  draft:
+    description: 'Draft GitHub Release instead of publishing it'
+    required: false
+    default: false
   
   release-notes:
     description: 'External Release Notes file to include in the GitHub Release'

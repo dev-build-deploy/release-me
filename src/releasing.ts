@@ -30,7 +30,7 @@ export async function createRelease(version: versioning.Version, body: string): 
     ...github.context.repo,
     name: version.toString(),
     body,
-    draft: false,
+    draft: core.getBooleanInput("draft"),
     prerelease: version instanceof SemVer ? version.preRelease !== undefined : false,
     make_latest: branching.getBranch().type === "default" ? "true" : "false",
     tag_name: version.toString(),
