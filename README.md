@@ -70,6 +70,7 @@ jobs:
 | `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
 | `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |
 | `increment-type` | NO | Enforce a specific increment type, please refer to the [Versioning Strategies](./docs/versioning-strategies.md) for more details |
+| `draft` | NO | Create a GitHub Release in `draft` status |
 
 ## Outputs
 
