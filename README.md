@@ -67,7 +67,8 @@ jobs:
 | `config`  | NO | Path to the [Release configuration](./docs/configuration.md), defaults to `.github/release.yml` | 
 | `artifacts` | NO | Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a [GitHub Release asset](./docs/asset-management.md) |
 | `files` | NO | Multiline list of files (paths) to upload as a [GitHub Release asset](./docs/asset-management.md) |
-| `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver`
+| `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
+| `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |
 
 ## Outputs
 
