@@ -36,6 +36,10 @@ inputs:
     description: Versioning scheme to apply
     required: false
     default: 'semver'
+  
+  release-notes:
+    description: 'External Release Notes file to include in the GitHub Release'
+    required: false
 
 outputs:
   created:

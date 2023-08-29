@@ -1,16 +1,19 @@
 /*
-SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
-SPDX-License-Identifier: MIT
-*/
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
 
-import { IConventionalCommit } from "@dev-build-deploy/commit-it";
-import * as thisModule from "./changelog";
 import * as core from "@actions/core";
+import * as fs from "fs";
 import * as github from "@actions/github";
+import * as thisModule from "./changelog";
+
 import YAML from "yaml";
+
+import { CalVerIncrement } from "@dev-build-deploy/version-it";
+import { IConventionalCommit } from "@dev-build-deploy/commit-it";
 import { SemVerIncrement } from "@dev-build-deploy/version-it/lib/semver";
 import { VersionScheme } from "./versioning";
-import { CalVerIncrement } from "@dev-build-deploy/version-it";
 
 /**
  * Exclude configuration
@@ -107,12 +110,21 @@ function firstCharToUpperCase(value: string) {
 }
 
 /**
+ * Reads the changelog from the provided file
+ * @param file File to read the changelog from
+ * @returns Changelog from file
+ */
+export async function readChangelogFromFile(file: string): Promise<string> {
+  return fs.readFileSync(file, "utf8");
+}
+
+/**
  * Generate the changelog based on the provided version and commits
  * @param version SemVer version of the Release
  * @param commits Conventional Commits part of the Changelog
  * @returns Changelog in Markdown format
  */
-export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]) {
+export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]): Promise<string> {
   core.info("📓 Generating Release Notes...");
 
   const isWildcard = (value?: string[]) => isMatch(value, "*");

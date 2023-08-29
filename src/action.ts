@@ -1,7 +1,7 @@
 /*
-SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
-SPDX-License-Identifier: MIT
-*/
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
 
 import * as assets from "./assets";
 import * as branching from "./branching";
@@ -78,7 +78,11 @@ export async function run(): Promise<void> {
     const newVersion = versioning.incrementVersion(latestVersion, increment);
 
     core.startGroup(`📦 Creating GitHub Release...`);
-    const body = await changelog.generateChangelog(versionScheme, commits);
+
+    const body = core.getInput("release-notes", undefined)
+      ? await changelog.readChangelogFromFile(core.getInput("release-notes"))
+      : await changelog.generateChangelog(versionScheme, commits);
+
     const release = await releasing.createRelease(newVersion, body);
     await assets.updateAssets(release.id);
     core.endGroup();
