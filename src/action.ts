@@ -41,49 +41,64 @@ export async function run(): Promise<void> {
 
     const branch = branching.getBranch();
     const versionScheme = versioning.getVersionScheme();
+    const versionOverride = core.getInput("version");
+
+    let newVersion: versioning.Version;
+    const commits: commitLib.IConventionalCommit[] = [];
 
     core.startGroup("🔍 Determining increment type");
-    const latestRelease = await releasing.getLatestRelease(branch, versionScheme);
-    let latestRef: string;
-    let latestVersion: versioning.Version;
-
-    if (latestRelease) {
-      core.info(`ℹ️ Latest release: ${latestRelease.tag_name}`);
-      latestRef = latestRelease.tag_name;
-      latestVersion = versionScheme.createVersion(latestRef);
+    if (versionOverride) {
+      core.info(`ℹ️ Using version override: ${versionOverride}`);
+      newVersion = versionScheme.createVersion(versionOverride);
+      core.setOutput("incremented-version", newVersion.toString());
     } else {
-      // NOTE: Postponed this expensive request for the case where there is no release determined yet
-      const initialCommit = await releasing.getInitialCommit();
+      let latestRef: string;
+      let latestVersion: versioning.Version;
 
-      core.info(`ℹ️ Creating release based on commit SHA: ${initialCommit.hash}`);
-      latestRef = initialCommit.hash;
-      latestVersion = versionScheme.initialVersion();
-    }
+      const latestRelease = await releasing.getLatestRelease(branch, versionScheme);
 
-    const increments: versioning.VersionIncrement[] = [];
-    const commits: commitLib.IConventionalCommit[] = [];
-    if (core.getInput("increment-type")) {
-      increments.push(...core.getInput("increment-type").split("|").map(inc => versioning.getIncrementType(versionScheme, inc)));
-    } else {
-      const delta = await releasing.getChangesSince(latestRef);
-      core.info(`ℹ️ Changes since: ${delta.length} commits`);
-  
-      commits.push(...filterConventionalCommits(delta));
-      core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
+      if (latestRelease) {
+        core.info(`ℹ️ Latest release: ${latestRelease.tag_name}`);
+        latestRef = latestRelease.tag_name;
+        latestVersion = versionScheme.createVersion(latestRef);
+      } else {
+        // NOTE: Postponed this expensive request for the case where there is no release determined yet
+        const initialCommit = await releasing.getInitialCommit();
 
-      const increment = versionScheme.determineIncrementType(commits)
-      if (increment === undefined) {
-        core.info("⚠️ No increment required, skipping...");
-        core.endGroup();
-        return;
+        core.info(`ℹ️ Creating release based on commit SHA: ${initialCommit.hash}`);
+        latestRef = initialCommit.hash;
+        latestVersion = versionScheme.initialVersion();
       }
-      increments.push(increment);
+
+      const increments: versioning.VersionIncrement[] = [];
+      if (core.getInput("increment-type")) {
+        increments.push(
+          ...core
+            .getInput("increment-type")
+            .split("|")
+            .map(inc => versioning.getIncrementType(versionScheme, inc))
+        );
+      } else {
+        const delta = await releasing.getChangesSince(latestRef);
+        core.info(`ℹ️ Changes since: ${delta.length} commits`);
+
+        commits.push(...filterConventionalCommits(delta));
+        core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
+
+        const increment = versionScheme.determineIncrementType(commits);
+        if (increment === undefined) {
+          core.info("⚠️ No increment required, skipping...");
+          core.endGroup();
+          return;
+        }
+        increments.push(increment);
+      }
+
+      core.setOutput("previous-version", latestVersion.toString());
+      newVersion = versioning.incrementVersion(latestVersion, increments);
+      core.setOutput("incremented-version", newVersion.toString());
     }
     core.endGroup();
-
-    core.setOutput("previous-version", latestVersion.toString());
-    const newVersion = versioning.incrementVersion(latestVersion, increments);
-    core.setOutput("incremented-version", newVersion.toString());
 
     if (!core.getBooleanInput("create-release")) {
       return;
