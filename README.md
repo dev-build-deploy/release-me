@@ -71,6 +71,7 @@ jobs:
 | `files` | NO | Multiline list of files (paths) to upload as a [GitHub Release asset](./docs/asset-management.md) |
 | `increment-type` | NO | Enforce a specific increment type, please refer to the [Versioning Strategies](./docs/versioning-strategies.md) for more details |
 | `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |
+| `version` | NO | Version to associate with the GitHub Release, can be OPTIONALLY set to override automatic detection or the `increment-type` parameter |
 | `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
 
 ## Outputs

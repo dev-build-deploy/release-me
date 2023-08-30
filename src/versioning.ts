@@ -181,7 +181,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
 
       return newVersion;
     }
-    
+
     let newVersion = new CalVer(version.format, version);
     let previousIncrement = "";
     for (const increment of incrementType) {
@@ -216,7 +216,11 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
     let newVersion = new SemVer(version);
     let previousIncrement = "";
     for (const increment of incrementType) {
-      newVersion = incrementSemVer(newVersion, increment as SemVerIncrement, ["PRERELEASE", "BUILD"].includes(previousIncrement));
+      newVersion = incrementSemVer(
+        newVersion,
+        increment as SemVerIncrement,
+        ["PRERELEASE", "BUILD"].includes(previousIncrement)
+      );
       previousIncrement = increment as SemVerIncrement;
       if (newVersion.isGreaterThan(version)) {
         break;
