@@ -20,10 +20,18 @@ inputs:
     required: false
     default: 'semver'
 
+  prefix:
+    description: 'Prefix used for the version (eg. v)'
+    required: false
+
   tag:
     description: 'GitHub Release to retrieve (by tag)'
     required: false
     default: 'latest'
+
+  name:
+    description: 'GitHub Release to retrieve (by name)'
+    required: false
 
 outputs:
   release:

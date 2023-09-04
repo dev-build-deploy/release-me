@@ -71,13 +71,13 @@ describe("Initial version", () => {
   test("SemVer", () => {
     const version = new versioning.SemVerScheme().initialVersion();
     expect(version).toBeInstanceOf(SemVer);
-  })
+  });
 
   test("CalVer", () => {
     const version = new versioning.CalVerScheme().initialVersion();
     expect(version).toBeInstanceOf(CalVer);
-  })
-})
+  });
+});
 
 describe("Create version", () => {
   test("SemVer", () => {
@@ -138,9 +138,15 @@ describe("Determine bump type (default branch)", () => {
 
   test("Added Feature", () => {
     const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat(login): add support google oauth (#12)", type: "feat", scope: "login", description: "add support google oauth (#12)" },
+      {
+        hash: "0a0b0c0d",
+        subject: "feat(login): add support google oauth (#12)",
+        type: "feat",
+        scope: "login",
+        description: "add support google oauth (#12)",
+      },
       { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" }
+      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -220,7 +226,13 @@ describe("Determine bump type (release branch)", () => {
 
   test("Added Feature", () => {
     const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat(login): add support google oauth (#12)", type: "feat", scope: "login", description: "add support google oauth (#12)" },
+      {
+        hash: "0a0b0c0d",
+        subject: "feat(login): add support google oauth (#12)",
+        type: "feat",
+        scope: "login",
+        description: "add support google oauth (#12)",
+      },
       { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
       { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
     ];
@@ -271,31 +283,41 @@ describe("Increment version with fallback", () => {
     });
 
     expect(
-      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MINOR"]).toString()
-    ).toBe("0.2.0-dev.1")
+      versioning
+        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MINOR"])
+        .toString()
+    ).toBe("0.2.0-dev.1");
 
     expect(
-      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.2.0-dev.1"), ["PRERELEASE", "MINOR"]).toString()
-    ).toBe("0.2.0-dev.2")
+      versioning
+        .incrementVersion(new versioning.SemVerScheme().createVersion("0.2.0-dev.1"), ["PRERELEASE", "MINOR"])
+        .toString()
+    ).toBe("0.2.0-dev.2");
 
     expect(
-      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MAJOR"]).toString()
-    ).toBe("1.0.0-dev.1")
+      versioning
+        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MAJOR"])
+        .toString()
+    ).toBe("1.0.0-dev.1");
 
     expect(
-      versioning.incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0-dev.1"), ["PRERELEASE", "MAJOR"]).toString()
-    ).toBe("0.1.0-dev.2")
-  })
+      versioning
+        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0-dev.1"), ["PRERELEASE", "MAJOR"])
+        .toString()
+    ).toBe("0.1.0-dev.2");
+  });
 
   test("CalVer", () => {
     jest.spyOn(branching, "getBranch").mockImplementation(() => {
       return { type: "default" };
     });
-    
+
     // NOTE: This is a bug in sorting CalVer in @dev-build-deploy/version-it; it should be 2023.06.1-hotfix.1
     expect(
-      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), ["MODIFIER", "CALENDAR"]).toString()
-    ).toBe("2023.06.0-hotfix.1")
+      versioning
+        .incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), ["MODIFIER", "CALENDAR"])
+        .toString()
+    ).toBe("2023.06.0-hotfix.1");
   });
 });
 

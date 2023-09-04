@@ -5,3 +5,4 @@
 /lib/get/index.js linguist-generated=true
 /lib/main/index.js linguist-generated=true
 
+lib/**/index.js -diff

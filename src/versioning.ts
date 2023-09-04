@@ -36,6 +36,8 @@ export abstract class VersionScheme {
  * @extends VersionScheme
  */
 export class SemVerScheme extends VersionScheme {
+  prefix = core.getInput("prefix") ?? undefined;
+
   defaultConfiguration: IReleaseConfiguration = {
     changelog: {
       categories: [
@@ -90,11 +92,11 @@ export class SemVerScheme extends VersionScheme {
 
   isValid(version: string): boolean {
     try {
-      this.createVersion(version);
+      const v = this.createVersion(version);
+      return v.prefix === this.prefix;
     } catch (error) {
       return false;
     }
-    return true;
   }
 }
 
@@ -104,6 +106,8 @@ export class SemVerScheme extends VersionScheme {
  * @extends VersionScheme
  */
 export class CalVerScheme extends VersionScheme {
+  prefix = core.getInput("prefix") ?? undefined;
+
   defaultConfiguration: IReleaseConfiguration = {
     changelog: {
       categories: [{ title: "✨ New Features", increment: ["*"] }],
@@ -133,11 +137,11 @@ export class CalVerScheme extends VersionScheme {
 
   isValid(version: string): boolean {
     try {
-      this.createVersion(version);
+      const v = this.createVersion(version);
+      return v.prefix === this.prefix;
     } catch (error) {
       return false;
     }
-    return true;
   }
 }
 

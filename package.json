@@ -21,7 +21,7 @@
     "build:main": "ncc build -o lib/main src/entrypoints/main.ts",
     "test": "jest --coverage",
     "lint": "eslint --ext .ts .",
-    "format": "prettier --write src/*.ts src/**/*.ts"
+    "format": "prettier --write **/*.ts"
   },
   "dependencies": {
     "@actions/artifact": "^1.1.1",

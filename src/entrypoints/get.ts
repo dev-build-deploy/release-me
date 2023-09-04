@@ -19,11 +19,13 @@ export async function run(): Promise<void> {
     const branch = branching.getBranch();
     const versionScheme = versioning.getVersionScheme();
 
-    const requestedVersion = core.getInput("tag");
+    const requestedVersion = core.getInput("name") ? core.getInput("name") : core.getInput("tag");
+    const requestedType = core.getInput("name") ? "name" : "tag";
+
     const release =
       requestedVersion === "latest"
         ? await releasing.getLatestRelease(branch, versionScheme)
-        : await releasing.getRelease(requestedVersion);
+        : await releasing.getRelease(requestedVersion, requestedType);
 
     if (release === undefined) return;
 

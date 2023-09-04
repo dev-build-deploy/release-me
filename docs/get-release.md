@@ -44,6 +44,8 @@ This can be particularly useful in case you need to access your GitHub Release (
 
 | Key | Required | Description |
 | --- | --- | --- |
+| `name` | NO | Name associated with the GitHub Release to retrieve, this will take precedence over `tag` if provided as input |
+| `prefix` | NO | Prefix for the version, MUST be one of `[A-Za-z0-9-.]`, only used when retrieving the latest version |
 | `token` | YES | GitHub token used to access GitHub |
-| `tag` | NO | Git tag associated with the GitHub Release to retrieve |
+| `tag` | NO | Git tag associated with the GitHub Release to retrieve, defaults to `latest` |
 | `versioning` | NO | [Versioning strategy](#versioning-strategies) to apply. MUST be one of `semver` or `calver`. Default: `semver` |
