@@ -14,8 +14,8 @@ export async function run(): Promise<void> {
   try {
     core.info("📄 ReleaseMe - GitHub Release Asset Management");
     const releaseId = parseInt(core.getInput("release-id", { required: true }));
-    await assets.removeAssets(releaseId);
     await assets.updateAssets(releaseId);
+    await assets.removeAssets(releaseId);
     await assets.downloadAssets(releaseId);
     core.info(`✅ Updated all assets!`);
   } catch (ex) {

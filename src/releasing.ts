@@ -43,14 +43,37 @@ export async function createRelease(version: versioning.Version, body: string): 
 }
 
 /**
- * Retrieve a GitHub Release by tag
- * @param version
- * @returns
+ * Retrieve a GitHub Release by tag or name
+ * @param id The tag or name of the release
+ * @param type The type of the release identifier
+ * @returns The release object
  */
-export async function getRelease(version: string): Promise<Release> {
+export async function getRelease(id: string, type: "tag" | "name"): Promise<Release | undefined> {
   const octokit = github.getOctokit(core.getInput("token"));
-  const { data: release } = await octokit.rest.repos.getReleaseByTag({ ...github.context.repo, tag: version });
-  return release;
+
+  switch (type) {
+    case "tag": {
+      const { data: release } = await octokit.rest.repos.getReleaseByTag({ ...github.context.repo, tag: id });
+      return release;
+    }
+
+    case "name": {
+      const releases: Release[] = [];
+
+      for await (const page of octokit.paginate.iterator(octokit.rest.repos.listReleases, {
+        ...github.context.repo,
+        per_page: 100,
+      })) {
+        releases.push(...page.data);
+      }
+
+      const matches = releases.filter(r => r.name === id);
+      if (matches.length > 1) {
+        throw new Error("Multiple releases found with the same name!");
+      }
+      return matches.length === 1 ? matches[0] : undefined;
+    }
+  }
 }
 
 /**

@@ -94,9 +94,9 @@ ReleaseMe also provides the `dev-build-deploy/release-me/assets` entrypoint for 
   uses: dev-build-deploy/release-me/assets@v0
   with:
     token: ${{ github.token }}
-    remove: |                      # List of assets to remove from the GitHub Release
+    download: |                    # List of assets to download from the GitHub Release
       output-as-artifact
-      output.txt
+      output.txt => build.log
     release-id: <INTEGER>          # Release ID of the GitHub Release to update
 ```
 
@@ -109,7 +109,7 @@ ReleaseMe also provides the `dev-build-deploy/release-me/assets` entrypoint for 
 | `artifacts` | NO | Multiline list of artifact names, uploaded as part of the current workflow run, to upload as a GitHub Release asset |
 | `files` | NO | Multiline list of files (paths) to upload as a GitHub Release asset |
 | `remove` | NO | Multiline list of GitHub Asset label to remove from the GitHub Release assets |
-| `download` | NO | Multiline list of GitHub Asset labels to download from the GitHub Release |
+| `download` | NO | Multiline list of GitHub Asset labels to download from the GitHub Release. You can specify a custom output filepath by appending "`=> <OUTPUT_FILE>`" to the entry (i.e. "`output.txt => build.log`") |
 
 ### Permissions
 

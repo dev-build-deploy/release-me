@@ -9,6 +9,8 @@ import * as fs from "fs";
 import * as github from "@actions/github";
 import * as path from "path";
 
+const DEFAULT_ASSET_DIR = "_assets";
+
 /**
  * Asset information
  * @interface IAsset
@@ -16,8 +18,18 @@ import * as path from "path";
  * @member label The label of the asset
  */
 interface IAsset {
-  name: string;
-  label?: string;
+  filepath: string;
+  label: string;
+}
+
+function getAssetPath(asset: string): string {
+  return path.join(
+    DEFAULT_ASSET_DIR,
+    path
+      .parse(asset)
+      .name.replace(/[^a-z0-9]/gi, "_")
+      .toLowerCase()
+  );
 }
 
 /**
@@ -31,12 +43,15 @@ async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
   for (const artifact of artifacts) {
     core.startGroup(`📡 Downloading artifact: ${artifact}`);
 
-    const dirname = `_assets/${artifact.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
+    const dirname = getAssetPath(artifact);
     await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
 
-    for (const file of fs.readdirSync(dirname)) {
-      filepaths.push({ name: path.join(dirname, file), label: artifact });
-    }
+    filepaths.push(
+      ...fs.readdirSync(dirname).map(file => {
+        return { filepath: path.join(dirname, file), label: artifact };
+      })
+    );
+
     core.endGroup();
   }
 
@@ -49,7 +64,11 @@ async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
  * @param id The GitHub Release identifier
  */
 export async function removeAssets(id: number): Promise<void> {
-  const assets = (core.getMultilineInput("remove") ?? []).map(f => ({ name: f, label: f }));
+  const assets = core.getMultilineInput("remove") ?? [];
+
+  if (assets.length === 0) {
+    return;
+  }
 
   const octokit = github.getOctokit(core.getInput("token"));
   const { data: currentAssets } = await octokit.rest.repos.listReleaseAssets({
@@ -58,14 +77,14 @@ export async function removeAssets(id: number): Promise<void> {
   });
 
   for (const asset of assets) {
-    core.info(`🔥 Removing ${asset.label ? asset.label : asset.name}...`);
-    const matchedAsset = currentAssets.find(a => a.label === asset.label);
+    core.info(`🔥 Removing ${asset}...`);
+    const matchedAsset = currentAssets.find(a => a.label === asset);
 
-    if (matchedAsset !== undefined) {
-      await octokit.rest.repos.deleteReleaseAsset({ ...github.context.repo, asset_id: matchedAsset.id });
-    } else {
-      throw new Error(`Asset ${asset.label} not found!`);
+    if (matchedAsset === undefined) {
+      throw new Error(`Asset ${asset} not found!`);
     }
+
+    await octokit.rest.repos.deleteReleaseAsset({ ...github.context.repo, asset_id: matchedAsset.id });
   }
 }
 
@@ -83,8 +102,12 @@ export async function removeAssets(id: number): Promise<void> {
 export async function updateAssets(id: number): Promise<void> {
   const assets = [
     ...(await downloadArtifacts(core.getMultilineInput("artifacts") ?? [])),
-    ...(core.getMultilineInput("files") ?? []).map(f => ({ name: f, label: f })),
+    ...(core.getMultilineInput("files") ?? []).map(f => ({ filepath: f, label: f })),
   ];
+
+  if (assets.length === 0) {
+    return;
+  }
 
   const octokit = github.getOctokit(core.getInput("token"));
 
@@ -94,9 +117,9 @@ export async function updateAssets(id: number): Promise<void> {
   });
 
   for (const asset of assets) {
-    core.info(`🔗 Uploading ${asset.label ? asset.label : asset.name}...`);
-    if (!fs.existsSync(asset.name)) {
-      throw new Error(`File ${asset.name} does not exist!`);
+    core.info(`🔗 Uploading ${asset.label}...`);
+    if (!fs.existsSync(asset.filepath)) {
+      throw new Error(`Path '${asset.filepath}' does not exist!`);
     }
 
     const matchedAsset = currentAssets.find(a => a.label === asset.label);
@@ -104,13 +127,13 @@ export async function updateAssets(id: number): Promise<void> {
       await octokit.rest.repos.deleteReleaseAsset({ ...github.context.repo, asset_id: matchedAsset.id });
     }
 
-    const data = fs.readFileSync(asset.name, { encoding: "utf8" });
+    const data = fs.readFileSync(asset.filepath, { encoding: "utf8" });
 
     await octokit.rest.repos.uploadReleaseAsset({
       ...github.context.repo,
       release_id: id,
-      name: asset.name,
-      label: asset.label ? asset.label : asset.name,
+      name: path.parse(asset.filepath).base,
+      label: asset.label,
       data: data,
     });
   }
@@ -122,7 +145,19 @@ export async function updateAssets(id: number): Promise<void> {
  * @param assets List of assets to download
  */
 export async function downloadAssets(id: number): Promise<void> {
-  const assets = (core.getMultilineInput("download") ?? []).map(f => ({ name: f, label: f }));
+  const assets: { label: string; output?: string }[] = (core.getMultilineInput("download") ?? []).map(
+    (asset: string) => {
+      const [assetLabel, outputFileName] = asset.split("=>").map(value => value.trim());
+      return {
+        label: assetLabel,
+        output: outputFileName ?? undefined,
+      };
+    }
+  );
+
+  if (assets.length === 0) {
+    return;
+  }
 
   const octokit = github.getOctokit(core.getInput("token"));
   const { data: currentAssets } = await octokit.rest.repos.listReleaseAssets({
@@ -131,18 +166,31 @@ export async function downloadAssets(id: number): Promise<void> {
   });
 
   for (const asset of assets) {
-    core.startGroup(`📡 Downloading ${asset.label ? asset.label : asset.name}...`);
+    core.startGroup(`📡 Downloading ${asset.label}...`);
     const matchedAsset = currentAssets.find(a => a.label === asset.label);
 
-    if (matchedAsset !== undefined) {
-      const { data: local } = await octokit.rest.repos.getReleaseAsset({
-        ...github.context.repo,
-        asset_id: matchedAsset.id,
-      });
-      core.info(`✅ Downloaded ${asset.label ? asset.label : asset.name} to _assets/${local.name.split(".")[1]}/!`);
-    } else {
+    if (matchedAsset === undefined) {
       throw new Error(`Asset ${asset.label} not found!`);
     }
+
+    asset.output = asset.output ?? path.join(getAssetPath(matchedAsset.label ?? matchedAsset.name), matchedAsset.name);
+
+    const { data: local } = await octokit.rest.repos.getReleaseAsset({
+      ...github.context.repo,
+      asset_id: matchedAsset.id,
+      headers: { accept: "application/octet-stream" },
+    });
+
+    if (path.parse(asset.output).dir !== "") {
+      fs.mkdirSync(path.parse(asset.output).dir, { recursive: true });
+    }
+
+    // Disabling `no-explicit-any` as the type definition for `octokit.rest.repos.getReleaseAsset`
+    // is incorrect when requesting the binary data.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fs.writeFileSync(asset.output, Buffer.from(local as any));
+
+    core.info(`✅ Downloaded ${asset.label} to ${asset.output}`);
     core.endGroup();
   }
 }
