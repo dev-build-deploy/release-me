@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+import * as fs from "fs";
+import * as path from "path";
+
 import * as artifact from "@actions/artifact";
 import * as core from "@actions/core";
-import * as fs from "fs";
 import * as github from "@actions/github";
-import * as path from "path";
 
 const DEFAULT_ASSET_DIR = "_assets";
 

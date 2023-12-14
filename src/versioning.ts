@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+import * as core from "@actions/core";
 import { ConventionalCommitError, IConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
 
-import * as core from "@actions/core";
-import { IReleaseConfiguration } from "./changelog";
 import * as branching from "./branching";
+import { IReleaseConfiguration } from "./changelog";
 
 export type Version = SemVer | CalVer;
 export type VersionIncrement = SemVerIncrement | CalVerIncrement;
@@ -164,7 +164,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
 
   if (version instanceof CalVer) {
     // eslint-disable-next-line no-inner-declarations
-    function incrementCalVer(version: CalVer, incrementType: CalVerIncrement, keepModifier: boolean) {
+    function incrementCalVer(version: CalVer, incrementType: CalVerIncrement, keepModifier: boolean): CalVer {
       const newVersion = version.increment(incrementType);
       switch (incrementType) {
         case "CALENDAR":
@@ -201,7 +201,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
     return newVersion;
   } else if (version instanceof SemVer) {
     // eslint-disable-next-line no-inner-declarations
-    function incrementSemVer(version: SemVer, incrementType: SemVerIncrement, keepMetadata: boolean) {
+    function incrementSemVer(version: SemVer, incrementType: SemVerIncrement, keepMetadata: boolean): SemVer {
       if (incrementType === "PRERELEASE") {
         // Apply the pre-release modifier based on the current branch (release: rc.#, default: dev.#)
         const prereleaseModifier = branching.getBranch().type === "release" ? "rc." : "dev.";
@@ -242,7 +242,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
  * @param b Right-side version
  * @returns 0 when a is equal to b, 1 when a is greater than b, and -1 when a is less than b
  */
-export function compareVersions(a: Version, b: Version) {
+export function compareVersions(a: Version, b: Version): number {
   if (a instanceof CalVer && b instanceof CalVer) {
     return a.compareTo(b);
   } else if (a instanceof SemVer && b instanceof SemVer) {

@@ -4,6 +4,7 @@
  */
 
 import * as core from "@actions/core";
+
 import * as assets from "../assets";
 
 /**

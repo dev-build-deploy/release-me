@@ -3,11 +3,12 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: MIT
 */
 
+import * as core from "@actions/core";
 import { IConventionalCommit } from "@dev-build-deploy/commit-it";
 import { SemVer, CalVer } from "@dev-build-deploy/version-it";
-import * as versioning from "../src/versioning";
+
 import * as branching from "../src/branching";
-import * as core from "@actions/core";
+import * as versioning from "../src/versioning";
 
 describe("getVersionScheme", () => {
   test("SemVer", () => {
