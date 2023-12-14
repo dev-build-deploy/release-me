@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+import * as core from "@actions/core";
+import * as commitLib from "@dev-build-deploy/commit-it";
+
 import * as assets from "./assets";
 import * as branching from "./branching";
 import * as changelog from "./changelog";
-import * as commitLib from "@dev-build-deploy/commit-it";
-import * as core from "@actions/core";
 import * as releasing from "./releasing";
 import * as versioning from "./versioning";
 

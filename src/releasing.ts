@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-import * as branching from "./branching";
-import * as commit from "@dev-build-deploy/commit-it";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as versioning from "./versioning";
-
-import type { components as octokitComponents } from "@octokit/openapi-types";
+import * as commit from "@dev-build-deploy/commit-it";
 import { SemVer } from "@dev-build-deploy/version-it";
+import type { components as octokitComponents } from "@octokit/openapi-types";
+
+import * as branching from "./branching";
+import * as versioning from "./versioning";
 
 type Release = octokitComponents["schemas"]["release"];
 type Commit = octokitComponents["schemas"]["commit"];
@@ -80,7 +80,7 @@ export async function getRelease(id: string, type: "tag" | "name"): Promise<Rele
  * Retrieve GitHub Releases, sorted by SemVer
  * @returns List of releases
  */
-async function getReleases(branch: branching.IBranch, versionScheme: versioning.VersionScheme) {
+async function getReleases(branch: branching.IBranch, versionScheme: versioning.VersionScheme): Promise<Release[]> {
   const octokit = github.getOctokit(core.getInput("token"));
   const releases: Release[] = [];
 

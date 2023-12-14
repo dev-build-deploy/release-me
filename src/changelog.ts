@@ -3,16 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 
-import * as core from "@actions/core";
 import * as fs from "fs";
-import * as github from "@actions/github";
-import * as thisModule from "./changelog";
 
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+import { CalVerIncrement, SemVerIncrement } from "@dev-build-deploy/version-it";
 import YAML from "yaml";
 
-import { CalVerIncrement } from "@dev-build-deploy/version-it";
-import { IConventionalCommit } from "@dev-build-deploy/commit-it";
-import { SemVerIncrement } from "@dev-build-deploy/version-it/lib/semver";
+import * as thisModule from "./changelog";
 import { VersionScheme } from "./versioning";
 
 /**
@@ -105,7 +104,7 @@ export async function getConfiguration(versionScheme: VersionScheme): Promise<IR
  * @param value Value to convert
  * @return Value with a capital first character
  */
-function firstCharToUpperCase(value: string) {
+function firstCharToUpperCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
@@ -127,8 +126,8 @@ export async function readChangelogFromFile(file: string): Promise<string> {
 export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]): Promise<string> {
   core.info("📓 Generating Release Notes...");
 
-  const isWildcard = (value?: string[]) => isMatch(value, "*");
-  const isMatch = (value?: string[], item?: string) =>
+  const isWildcard = (value?: string[]): boolean => isMatch(value, "*");
+  const isMatch = (value?: string[], item?: string): boolean =>
     item !== undefined && value !== undefined && value.includes(item);
 
   const config = await getConfiguration(versionScheme);

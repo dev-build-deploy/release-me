@@ -4,6 +4,7 @@ SPDX-License-Identifier: MIT
 */
 
 import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+
 import * as branching from "../src/branching";
 import * as changelog from "../src/changelog";
 import { SemVerScheme } from "../src/versioning";

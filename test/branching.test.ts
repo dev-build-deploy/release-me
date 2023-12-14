@@ -3,8 +3,9 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: MIT
 */
 
-import * as branching from "../src/branching";
 import * as github from "@actions/github";
+
+import * as branching from "../src/branching";
 
 jest.mock("@actions/github");
 

@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import * as branching from "../branching";
 import * as core from "@actions/core";
+
+import * as branching from "../branching";
 import * as releasing from "../releasing";
 import * as versioning from "../versioning";
 
