@@ -10,3 +10,7 @@ License: MIT
 Files: docs/*.png
 Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
 License: MIT
+
+Files: .github/.commit-me.json
+Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
+License: MIT

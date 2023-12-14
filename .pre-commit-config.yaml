@@ -3,9 +3,13 @@
 
 repos:
 - repo: https://github.com/dev-build-deploy/commit-me
-  rev: v0.13.0
+  rev: v1.1.0
   hooks:
   - id: commit-me
+    args: [
+    # Custom configuration file path
+    '--config', '.github/.commit-me.json'
+  ]
 
 - repo: https://github.com/dev-build-deploy/reuse-me
   rev: v0.10.0
