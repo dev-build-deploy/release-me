@@ -3,6 +3,15 @@ Upstream-Name: release-me
 Upstream-Contact: Kevin de Jong <monkaii@hotmail.com>
 Source: https://github.com/dev-build-deploy/release-me
 
+Files: package*.json
+       tsconfig.json
+Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
+License: MIT
+
+Files: .prettierrc.json
+Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
+License: MIT
+
 Files: lib/**
 Copyright: 2023 Kevin de Jong <monkaii@hotmail.com>
 License: MIT
