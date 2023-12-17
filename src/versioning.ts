@@ -4,7 +4,7 @@
  */
 
 import * as core from "@actions/core";
-import { ConventionalCommitError, IConventionalCommit } from "@dev-build-deploy/commit-it";
+import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
 
 import * as branching from "./branching";
@@ -24,7 +24,7 @@ export type VersionIncrement = SemVerIncrement | CalVerIncrement;
  */
 export abstract class VersionScheme {
   abstract defaultConfiguration: IReleaseConfiguration;
-  abstract determineIncrementType(commits: IConventionalCommit[]): VersionIncrement | undefined;
+  abstract determineIncrementType(commits: ConventionalCommit[]): VersionIncrement | undefined;
   abstract isValid(version: string): boolean;
   abstract createVersion(version: string): Version;
   abstract initialVersion(): Version;
@@ -69,15 +69,17 @@ export class SemVerScheme extends VersionScheme {
    * @param commits List of commits to determine the increment type for
    * @returns Increment type
    */
-  determineIncrementType(commits: IConventionalCommit[]): SemVerIncrement | undefined {
+  determineIncrementType(commits: ConventionalCommit[]): SemVerIncrement | undefined {
     const typeCount: { [key: string]: number } = { feat: 0, fix: 0 };
 
     for (const commit of commits) {
-      try {
-        if (commit.breaking) return branching.getBranch().type === "default" ? "MAJOR" : "PATCH";
-        typeCount[commit.type]++;
-      } catch (error) {
-        if (!(error instanceof ConventionalCommitError)) throw error;
+      if (!commit.isValid) continue;
+      if (commit.breaking) return branching.getBranch().type === "default" ? "MAJOR" : "PATCH";
+
+      // Implementors of the Conventional Commit specification MUST always treat Conventional Commit elements as non-case sensitive.
+      const commitType = commit.type?.toLowerCase() ?? "";
+      if (commitType === "feat" || commitType === "fix") {
+        typeCount[commitType]++;
       }
     }
 
@@ -131,7 +133,7 @@ export class CalVerScheme extends VersionScheme {
    * @returns Increment type
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  determineIncrementType(_commits: IConventionalCommit[]): CalVerIncrement | undefined {
+  determineIncrementType(_commits: ConventionalCommit[]): CalVerIncrement | undefined {
     return branching.getBranch().type === "default" ? "CALENDAR" : "MODIFIER";
   }
 

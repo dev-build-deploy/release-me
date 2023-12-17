@@ -7,7 +7,7 @@ import * as fs from "fs";
 
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVerIncrement, SemVerIncrement } from "@dev-build-deploy/version-it";
 import YAML from "yaml";
 
@@ -123,7 +123,7 @@ export async function readChangelogFromFile(file: string): Promise<string> {
  * @param commits Conventional Commits part of the Changelog
  * @returns Changelog in Markdown format
  */
-export async function generateChangelog(versionScheme: VersionScheme, commits: IConventionalCommit[]): Promise<string> {
+export async function generateChangelog(versionScheme: VersionScheme, commits: ConventionalCommit[]): Promise<string> {
   core.info("📓 Generating Release Notes...");
 
   const isWildcard = (value?: string[]): boolean => isMatch(value, "*");
@@ -135,6 +135,8 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: I
   const changelog = `${title}\n\n${config.changelog?.categories
     ?.map(category => {
       const categoryCommits = commits.filter(commit => {
+        if (!commit.isValid) return false;
+
         const incrementType = versionScheme.determineIncrementType([commit]);
 
         const hasValidIncrement =
@@ -157,7 +159,7 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: I
 
       if (categoryCommits.length > 0)
         return `### ${category.title}\n\n${categoryCommits
-          .map(commit => `- ${firstCharToUpperCase(commit.description)}`)
+          .map(commit => `- ${firstCharToUpperCase(commit.description ?? "")}`)
           .join("\n")}\n\n`;
 
       return;

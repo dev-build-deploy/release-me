@@ -3,41 +3,20 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: MIT
 */
 
+import { Commit, ConventionalCommit } from "@dev-build-deploy/commit-it";
+
 import * as action from "../src/action";
 
 describe("Filter Conventional Commits", () => {
   test("Filter out non-conventional commits", () => {
     const conventionals = action.filterConventionalCommits([
-      {
-        hash: "0a0b0c0d",
-        subject: "feat: add new feature",
-      },
-      {
-        hash: "0a0b0c0d",
-        subject: "fix: prevent bug",
-      },
-      {
-        hash: "0a0b0c0d",
-        subject: "Not a conventional commit",
-      },
+      Commit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      Commit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      Commit.fromString({ hash: "0a0b0c0d", message: "Not a conventional commit" }),
     ]);
-    expect(conventionals).toStrictEqual([
-      {
-        hash: "0a0b0c0d",
-        subject: "feat: add new feature",
-        breaking: false,
-        description: "add new feature",
-        scope: undefined,
-        type: "feat",
-      },
-      {
-        hash: "0a0b0c0d",
-        subject: "fix: prevent bug",
-        breaking: false,
-        description: "prevent bug",
-        scope: undefined,
-        type: "fix",
-      },
+    expect(conventionals).toEqual([
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
     ]);
   });
 });
