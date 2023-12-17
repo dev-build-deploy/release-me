@@ -133,7 +133,7 @@ export async function getLatestRelease(
  * @param ref The git ref to compare against
  * @returns List of commits
  */
-export async function getChangesSince(ref: string): Promise<commit.ICommit[]> {
+export async function getChangesSince(ref: string): Promise<commit.Commit[]> {
   const octokit = github.getOctokit(core.getInput("token"));
   const commits: Commit[] = [];
 
@@ -144,14 +144,14 @@ export async function getChangesSince(ref: string): Promise<commit.ICommit[]> {
     commits.push(...response.data.commits);
   }
 
-  return commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
+  return commits.map(c => commit.Commit.fromString({ hash: c.sha, message: c.commit.message }));
 }
 
 /**
  * Determines the initial commit in the current branch
  * @returns The initial commit
  */
-export async function getInitialCommit(): Promise<commit.ICommit> {
+export async function getInitialCommit(): Promise<commit.Commit> {
   const octokit = github.getOctokit(core.getInput("token"));
   const commits: Commit[] = [];
 
@@ -162,6 +162,6 @@ export async function getInitialCommit(): Promise<commit.ICommit> {
     commits.push(...response.data);
   }
 
-  const commitMap = commits.map(c => commit.getCommit({ hash: c.sha, message: c.commit.message }));
+  const commitMap = commits.map(c => commit.Commit.fromString({ hash: c.sha, message: c.commit.message }));
   return commitMap[commitMap.length - 1];
 }

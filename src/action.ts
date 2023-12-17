@@ -4,7 +4,7 @@
  */
 
 import * as core from "@actions/core";
-import * as commitLib from "@dev-build-deploy/commit-it";
+import { Commit, ConventionalCommit } from "@dev-build-deploy/commit-it";
 
 import * as assets from "./assets";
 import * as branching from "./branching";
@@ -18,18 +18,8 @@ import * as versioning from "./versioning";
  * @returns List of Conventional Commits
  * @internal
  */
-export function filterConventionalCommits(commits: commitLib.ICommit[]): commitLib.IConventionalCommit[] {
-  return commits
-    .map(c => {
-      try {
-        return commitLib.getConventionalCommit(c);
-      } catch (error) {
-        if (!(error instanceof commitLib.ConventionalCommitError)) throw error;
-      }
-
-      return;
-    })
-    .filter(c => c !== undefined) as commitLib.IConventionalCommit[];
+export function filterConventionalCommits(commits: Commit[]): ConventionalCommit[] {
+  return commits.map(c => ConventionalCommit.fromCommit(c)).filter(c => c.isValid);
 }
 
 /**
@@ -45,7 +35,7 @@ export async function run(): Promise<void> {
     const versionOverride = core.getInput("version");
 
     let newVersion: versioning.Version;
-    const commits: commitLib.IConventionalCommit[] = [];
+    const commits: ConventionalCommit[] = [];
 
     core.startGroup("🔍 Determining increment type");
     if (versionOverride) {

@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 */
 
 import * as core from "@actions/core";
-import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { SemVer, CalVer } from "@dev-build-deploy/version-it";
 
 import * as branching from "../src/branching";
@@ -100,16 +100,10 @@ describe("Determine bump type (default branch)", () => {
   });
 
   test("Breaking Change (subject)", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      {
-        hash: "0a0b0c0d",
-        subject: "chore!: breaking change",
-        type: "chore",
-        description: "breaking change",
-        breaking: true,
-      },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore!: breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -119,16 +113,13 @@ describe("Determine bump type (default branch)", () => {
   });
 
   test("Breaking Change (footer)", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      {
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "chore: breaking change",
-        type: "chore",
-        description: "breaking change",
-        breaking: true,
-      },
+        message: "chore: breaking change\n\nBREAKING-CHANGE: this is a breaking change",
+      }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -138,16 +129,10 @@ describe("Determine bump type (default branch)", () => {
   });
 
   test("Added Feature", () => {
-    const commits: IConventionalCommit[] = [
-      {
-        hash: "0a0b0c0d",
-        subject: "feat(login): add support google oauth (#12)",
-        type: "feat",
-        scope: "login",
-        description: "add support google oauth (#12)",
-      },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat(login): add support google oauth (#12)" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -157,9 +142,9 @@ describe("Determine bump type (default branch)", () => {
   });
 
   test("Added bug fix", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -169,8 +154,8 @@ describe("Determine bump type (default branch)", () => {
   });
 
   test("No change", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -188,16 +173,10 @@ describe("Determine bump type (release branch)", () => {
   });
 
   test("Breaking Change (subject)", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      {
-        hash: "0a0b0c0d",
-        subject: "chore!: breaking change",
-        type: "chore",
-        description: "breaking change",
-        breaking: true,
-      },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore!: breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -207,16 +186,13 @@ describe("Determine bump type (release branch)", () => {
   });
 
   test("Breaking Change (footer)", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      {
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add new feature" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "chore: breaking change",
-        type: "chore",
-        description: "breaking change",
-        breaking: true,
-      },
+        message: "chore: breaking change\n\nBREAKING-CHANGE: this is a breaking change",
+      }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -226,16 +202,10 @@ describe("Determine bump type (release branch)", () => {
   });
 
   test("Added Feature", () => {
-    const commits: IConventionalCommit[] = [
-      {
-        hash: "0a0b0c0d",
-        subject: "feat(login): add support google oauth (#12)",
-        type: "feat",
-        scope: "login",
-        description: "add support google oauth (#12)",
-      },
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat(login): add support google oauth (#12)" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -245,9 +215,9 @@ describe("Determine bump type (release branch)", () => {
   });
 
   test("Added bug fix", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "fix: prevent bug", type: "fix", description: "prevent bug" },
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: prevent bug" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();
@@ -257,8 +227,8 @@ describe("Determine bump type (release branch)", () => {
   });
 
   test("No change", () => {
-    const commits: IConventionalCommit[] = [
-      { hash: "0a0b0c0d", subject: "chore: non breaking change", type: "chore", description: "non breaking change" },
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore: non breaking change" }),
     ];
     const semver = new versioning.SemVerScheme();
     const calver = new versioning.CalVerScheme();

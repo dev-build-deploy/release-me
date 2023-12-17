@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: MIT
 */
 
-import { IConventionalCommit } from "@dev-build-deploy/commit-it";
+import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 
 import * as branching from "../src/branching";
 import * as changelog from "../src/changelog";
@@ -11,31 +11,13 @@ import { SemVerScheme } from "../src/versioning";
 
 describe("Generate Changelog", () => {
   const commits = [
-    { hash: "0a0b0c0d", subject: "feat: add new feature", type: "feat", description: "add new feature" },
-    {
-      hash: "0a0b0c0d",
-      subject: "feat!: add new breaking feature",
-      type: "feat",
-      description: "add new breaking feature",
-      breaking: true,
-    },
-    { hash: "0a0b0c0d", subject: "fix: address a bug", type: "fix", description: "address a bug" },
-    {
-      hash: "0a0b0c0d",
-      subject: "fix(core): address failure in core logic",
-      type: "fix",
-      description: "address failure in core logic",
-      scope: "core",
-    },
-    {
-      hash: "0a0b0c0d",
-      subject: "chore!: break the api",
-      type: "chore",
-      description: "break the api",
-      breaking: true,
-    },
-    { hash: "0a0b0c0d", subject: "docs: improve documentation", type: "docs", description: "improve documentation" },
-    { hash: "0a0b0c0d", subject: "perf: improve performance", type: "perf", description: "improve performance" },
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat: add a new feature" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat!: add new breaking feature" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: address a bug" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix(core): address failure in core logic" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore!: break the api" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "docs: improve documentation" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "perf: improve performance" }),
   ];
 
   beforeEach(() => {
@@ -204,52 +186,29 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const commits: IConventionalCommit[] = [
-      {
+    const commits: ConventionalCommit[] = [
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "feat!: removed `doIt(...)` as this is replaced by `doItBetter(...)`",
-        type: "feat",
-        description: "removed `doIt(...)` as this is replaced by `doItBetter(...)`",
-        breaking: true,
-      },
-      {
+        message: "feat!: removed `doIt(...)` as this is replaced by `doItBetter(...)`",
+      }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "feat: add support for a Release Notes configuration file",
-        type: "feat",
-        description: "add support for a Release Notes configuration file",
-      },
-      {
+        message: "feat: add support for a Release Notes configuration file",
+      }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "feat: allow users to specify the Release Notes configuration file location",
-        type: "feat",
-        description: "allow users to specify the Release Notes configuration file location",
-      },
-      {
+        message: "feat: allow users to specify the Release Notes configuration file location",
+      }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: hide empty categories from the Release Notes" }),
+      ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix(internal): please do not notice me" }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "fix: hide empty categories from the Release Notes",
-        type: "fix",
-        description: "hide empty categories from the Release Notes",
-      },
-      {
+        message: "docs(api): add basic description on configuration usage",
+      }),
+      ConventionalCommit.fromString({
         hash: "0a0b0c0d",
-        subject: "fix(internal): please do not notice me",
-        type: "fix",
-        scope: "internal",
-        description: "please do not notice me",
-      },
-      {
-        hash: "0a0b0c0d",
-        subject: "docs(api): add basic description on configuration usage",
-        type: "docs",
-        description: "add basic description on configuration usage",
-        scope: "api",
-      },
-      {
-        hash: "0a0b0c0d",
-        subject: "docs: this should not show up in the Release Notes",
-        type: "docs",
-        description: "this should not show up in the Release Notes",
-      },
+        message: "docs: this should not show up in the Release Notes",
+      }),
     ];
 
     const result = await changelog.generateChangelog(new SemVerScheme(), commits);
