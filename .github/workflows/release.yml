@@ -35,7 +35,7 @@ jobs:
       release: ${{ steps.release.outputs.release }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run ReleaseMe
         id: release
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ fromJSON(needs.release-me.outputs.release).tag_name }}
 
