@@ -59,6 +59,6 @@ jobs:
           ref: ${{ fromJSON(needs.release-me.outputs.release).tag_name }}
 
       - name: Update the ${{ fromJSON(needs.release-me.outputs.release).tag_name }} tag
-        uses: actions/publish-action@v0.2.2
+        uses: actions/publish-action@v0.3.0
         with:
           source-tag: ${{ fromJSON(needs.release-me.outputs.release).tag_name }}
