@@ -36,7 +36,7 @@
     "@tsconfig/node20": "^20",
     "@types/jest": ">=29",
     "@types/node": "^20",
-    "@typescript-eslint/eslint-plugin": ">=6",
+    "@typescript-eslint/eslint-plugin": ">=7",
     "@typescript-eslint/parser": ">=6",
     "@vercel/ncc": ">=0",
     "eslint": ">=8",
