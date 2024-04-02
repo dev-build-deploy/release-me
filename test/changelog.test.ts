@@ -15,6 +15,7 @@ describe("Generate Changelog", () => {
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "feat!: add new breaking feature" }),
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix: address a bug" }),
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "fix(core): address failure in core logic" }),
+    ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore(dev-deps): update development dependency" }),
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "chore!: break the api" }),
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "docs: improve documentation" }),
     ConventionalCommit.fromString({ hash: "0a0b0c0d", message: "perf: improve performance" }),
