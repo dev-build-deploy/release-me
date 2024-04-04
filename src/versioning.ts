@@ -212,7 +212,7 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
         }
       }
 
-      const newVersion = version.increment(incrementType as SemVerIncrement);
+      const newVersion = version.increment(incrementType);
       if (keepMetadata) {
         newVersion.preRelease = version.preRelease;
       }
