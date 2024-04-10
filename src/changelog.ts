@@ -9,6 +9,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVerIncrement, SemVerIncrement } from "@dev-build-deploy/version-it";
+import { RequestError } from "@octokit/request-error";
 import YAML from "yaml";
 
 import * as thisModule from "./changelog";
@@ -71,10 +72,14 @@ export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration |
       return YAML.parse(content) as IReleaseConfiguration;
     }
   } catch (error) {
-    if ((error as Error).message !== "Not Found") {
-      throw error;
+    if (error instanceof RequestError && error.response) {
+      const reponseData = error.response.data as Record<string, unknown>;
+      if ("message" in reponseData && reponseData.message === "Not Found") {
+        core.info("No release configuration found, using default configuration");
+        return;
+      }
     }
-    core.info("No release configuration found, using default configuration");
+    throw error;
   }
   return;
 }
