@@ -67,5 +67,5 @@ outputs:
     description: 'JSON object containing the release information'
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'lib/main/index.js'
