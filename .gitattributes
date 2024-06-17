@@ -6,3 +6,4 @@
 /lib/main/index.js linguist-generated=true
 
 lib/**/index.js -diff
+package-lock.json -diff
