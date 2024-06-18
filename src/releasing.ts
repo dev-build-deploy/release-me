@@ -25,13 +25,14 @@ type Commit = octokitComponents["schemas"]["commit"];
  */
 export async function createRelease(version: versioning.Version, body: string): Promise<Release> {
   core.info(`🎁 Creating GitHub Release ${version.toString()}...`);
+  const prerelease = version instanceof SemVer ? version.preReleases.length > 0 : version.modifiers.length > 0;
   const octokit = github.getOctokit(core.getInput("token"));
   const { data: release } = await octokit.rest.repos.createRelease({
     ...github.context.repo,
     name: version.toString(),
     body,
     draft: core.getBooleanInput("draft"),
-    prerelease: version instanceof SemVer ? version.preRelease !== undefined : false,
+    prerelease: prerelease,
     make_latest: branching.getBranch().type === "default" ? "true" : "false",
     tag_name: version.toString(),
     target_commitish: github.context.ref,

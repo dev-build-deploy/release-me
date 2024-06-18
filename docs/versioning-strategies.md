@@ -99,49 +99,50 @@ You can use Calendar Versioning for your releases, using the following predefine
 | `YYYY` | Full year |
 | `0M` | Zero padded month number |
 | `MICRO` | Incremental release number |
-| `MODIFIER` | Reserved for incremental releases on a [release branch](#branching-strategy). Will use a value in the range `hotfix.[n]` |
+| `MODIFIER` | Used to denote a Development build (`-dev.[n]`) or Release Candidate (`-rc.[n]`) |
 
-Every single change made to your *default branch* will result in:
-- an increment of the `CALENDAR` type:
-- an increment of the `MICRO` type in case the calendar date did not change
+Every single change made to either you _default_ and _release_ branches will have its `CALENDAR` version incremented;
 
 For example:
 
+| Branch | Current date | Current Version | Incremented Version |
+| --- | --- | --- | --- |
+| Default | 21 Jun 2023 | `2023.06.0-dev.1` | `2023.06.0-dev.2` |
+| Default | 6 Jul 2023 | `2023.06.0-dev.2` | `2023.07.0-dev.1` |
+| Release | 6 Jul 2023 | `2023.07.0-dev.1` | `2023.07.0-rc.1` |
+
+> [!INFO]
+> More details can be found [here](https://github.com/dev-build-deploy/version-it#incrementing-the-version-1)
+
+You will need to set the `increment-type` input-parameter to `MICRO` in order to release the version:
+
 | Current date | Current Version | Incremented Version |
 | --- | --- | --- |
-| 21 Jun 2023 | `2023.06.0` | `2023.06.1` |
-| 28 Jun 2023 | `2023.06.1` | `2023.06.2` |
-| 6 Jul 2023 | `2023.06.2` | `2023.07.0` |
-
-> :bulb: More details can be found [here](https://github.com/dev-build-deploy/version-it#incrementing-the-version-1)
-
-Any change made to a *release branch* (`release/<YYYY>.<0M>.<MICRO>`), will increase the `MODIFIER`:
-
-| Current date | Current Version | Incremented Version |
-| --- | --- | --- |
-| 21 Jun 2023 | `2023.06.0` | `2023.06.0-hotfix.1` |
-| 28 Sep 2023 | `2023.06.0-hotfix.1` | `2023.06.0-hotfix.2` |
-| 6 Dec 2023 | `2023.06.0-hotifx.2` | `2023.06.0-hotfix.3` |
+| 21 Jun 2023 | `2023.06.0-rc.4` | `2023.06.1` |
+| 28 Sep 2023 | `2023.06.1` | `2023.06.2` |
+| 6 Dec 2023 | `2023.06.2` | `2023.06.3` |
 
 <details>
 <summary>Example...</summary>
 
 ```mermaid
 gitGraph
-       commit tag: "2023.06.0"
+       commit tag: "2023.06.0-dev.1"
        commit
-       commit tag: "2023.06.1"
-       branch "release/2023.06.1"
+       commit tag: "2023.06.0-dev.3"
+       branch "release/2023.06"
        checkout main
        commit
-       commit tag: "2023.06.2"
-       commit
-       commit tag: "2023.07.0" id: "A"
-       checkout "release/2023.06.1"
-       cherry-pick id: "A" tag: "2023.06.1-hotfix.1"
+       commit tag: "2023.06.0-dev.5"
+       commit id: "A"
+       commit tag: "2023.07.0-dev.1"
+       checkout "release/2023.06"
+       cherry-pick id: "A" tag: "2023.06.0-rc.1"
        checkout main
-       commit tag: "2023.07.1"
+       commit tag: "2023.07.0-dev.2" id: "B"
        commit
+       checkout "release/2023.06"
+       cherry-pick id: "B" tag: "2023.06.0"
 ```
 
 </details>
