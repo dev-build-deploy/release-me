@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* eslint-disable @typescript-eslint/no-extraneous-class */
+
 import * as core from "@actions/core";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
