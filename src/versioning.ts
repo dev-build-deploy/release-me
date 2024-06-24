@@ -11,7 +11,7 @@ import * as branching from "./branching";
 import { IReleaseConfiguration } from "./changelog";
 
 export type Version = SemVer | CalVer;
-export type VersionIncrement = SemVerIncrement | CalVerIncrement;
+export type VersionIncrement = SemVerIncrement | CalVerIncrement | "RELEASE";
 
 /**
  * Versioning scheme
@@ -22,6 +22,7 @@ export type VersionIncrement = SemVerIncrement | CalVerIncrement;
  * @method isValid Determines whether the provided version is valid
  * @method createVersion Creates a Version object based on the provided version string
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export abstract class VersionScheme {
   abstract defaultConfiguration: IReleaseConfiguration;
   abstract determineIncrementType(commits: ConventionalCommit[]): VersionIncrement | undefined;
@@ -50,12 +51,12 @@ export class SemVerScheme extends VersionScheme {
 
   initialVersion(): SemVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new SemVer(undefined, prefix);
+    return new SemVer({ prefix: prefix });
   }
 
   createVersion(version: string): SemVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new SemVer(version, prefix);
+    return SemVer.fromString(version, prefix);
   }
 
   /**
@@ -118,23 +119,20 @@ export class CalVerScheme extends VersionScheme {
 
   initialVersion(): Version {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new CalVer("YYYY.0M.MICRO", undefined, prefix);
+    return new CalVer("YYYY.0M.MICRO", { prefix: prefix });
   }
 
   createVersion(version: string): CalVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new CalVer("YYYY.0M.MICRO", version, prefix);
+    return CalVer.fromString("YYYY.0M.MICRO", version, prefix);
   }
 
   /**
-   * Determines the increment type based on the current branch type;
-   * - If the branch type is a release branch, the MODIFIER version is incremented.
-   * - If the branch type is the default branch, the CALENDAR version is incremented.
+   * We always increment the CALENDAR version when running without input parameters.
    * @returns Increment type
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   determineIncrementType(_commits: ConventionalCommit[]): CalVerIncrement | undefined {
-    return branching.getBranch().type === "default" ? "CALENDAR" : "MODIFIER";
+    return "CALENDAR";
   }
 
   isValid(version: string): boolean {
@@ -150,92 +148,74 @@ export class CalVerScheme extends VersionScheme {
 /**
  * Increments the provided version based on the provided increment type.
  *
- * NOTE:
- * - When incrementing a Calendar Version, the MICRO version is incremented in case
- *   the calendar date has not changed.
- * - When incrementing the MODIFIER, the MODIFIER version is set to `hotfix.[n]`
+ * - When incrementing a Calendar Version:
+ *   - The CALENDAR version is always updated. The `-dev` or `-rc` modifiers are added based
+ *      on the current branch in case the user did not provide this as increment-type.
+ *   - The User is expected to provide the MICRO increment type when making a formal release.
+ * - We remove any pre-release identifier which is not -rc or -dev.
  *
  * @param version Version to increment
  * @param incrementType Type of increment
  * @returns Incremented version
  */
-export function incrementVersion(version: Version, incrementType: VersionIncrement | VersionIncrement[]): Version {
-  if (!Array.isArray(incrementType)) {
-    incrementType = [incrementType];
-  }
+export function incrementVersion(version: Version, incrementType: VersionIncrement): Version {
+  const isPrerelease = core.getBooleanInput("prerelease");
 
   if (version instanceof CalVer) {
-    // eslint-disable-next-line no-inner-declarations
-    function incrementCalVer(version: CalVer, incrementType: CalVerIncrement, keepModifier: boolean): CalVer {
-      const newVersion = version.increment(incrementType);
-      switch (incrementType) {
-        case "CALENDAR":
-          if (newVersion.major === version.major && newVersion.minor === version.minor) {
-            const newVersion = version.increment("MICRO");
-            if (keepModifier) {
-              newVersion.modifier = version.modifier;
-            }
-            return newVersion;
-          }
-          break;
-        case "MODIFIER":
-          if (version.modifier === undefined) {
-            newVersion.modifier = "hotfix.1";
-          }
-          break;
-      }
-
-      return newVersion;
-    }
-
-    let newVersion = new CalVer(version.format, version);
-    let previousIncrement = "";
-    for (const increment of incrementType) {
-      newVersion = incrementCalVer(newVersion, increment as CalVerIncrement, previousIncrement === "MODIFIER");
-      previousIncrement = increment;
-
-      // TODO: @dev-build-deploy/version-it does not correctly compare CalVer versions with MODIFIERS.
-      if (newVersion.isGreaterThan(version)) {
-        break;
-      }
-    }
-
-    return newVersion;
-  } else if (version instanceof SemVer) {
-    // eslint-disable-next-line no-inner-declarations
-    function incrementSemVer(version: SemVer, incrementType: SemVerIncrement, keepMetadata: boolean): SemVer {
-      if (incrementType === "PRERELEASE") {
-        // Apply the pre-release modifier based on the current branch (release: rc.#, default: dev.#)
-        const prereleaseModifier = branching.getBranch().type === "release" ? "rc." : "dev.";
-        if (!(version.preRelease ?? "").startsWith(prereleaseModifier)) {
-          version.preRelease = prereleaseModifier + "0";
+    switch (incrementType) {
+      case "RELEASE": {
+        if (!isPrerelease) {
+          const newVersion = new CalVerScheme().createVersion(version.toString());
+          newVersion.modifiers = [];
+          return newVersion;
         }
+
+        return version;
       }
 
-      const newVersion = version.increment(incrementType);
-      if (keepMetadata) {
-        newVersion.preRelease = version.preRelease;
-      }
-      return newVersion;
-    }
+      case "CALENDAR":
+      case "MICRO": {
+        if (isPrerelease) {
+          const isReleaseBranch = branching.getBranch().type === "release";
+          const modifier = isReleaseBranch ? "rc" : "dev";
 
-    let newVersion = new SemVer(version);
-    let previousIncrement = "";
-    for (const increment of incrementType) {
-      newVersion = incrementSemVer(
-        newVersion,
-        increment as SemVerIncrement,
-        ["PRERELEASE", "BUILD"].includes(previousIncrement)
-      );
-      previousIncrement = increment as SemVerIncrement;
-      if (newVersion.isGreaterThan(version)) {
-        break;
+          const newVersion = version.increment(incrementType as CalVerIncrement).increment("MODIFIER", modifier);
+          newVersion.modifiers = newVersion.modifiers.filter(element => element.identifier === modifier);
+          return newVersion;
+        }
+        return version.increment(incrementType as CalVerIncrement);
       }
     }
-    return newVersion;
+  } else if (version instanceof SemVer) {
+    switch (incrementType) {
+      case "RELEASE": {
+        if (!isPrerelease) {
+          const newVersion = new SemVerScheme().createVersion(version.toString());
+          newVersion.preReleases = [];
+          return newVersion;
+        }
+
+        return version;
+      }
+
+      case "MAJOR":
+      case "MINOR":
+      case "PATCH": {
+        if (isPrerelease) {
+          const isReleaseBranch = branching.getBranch().type === "release";
+          const modifier = isReleaseBranch ? "rc" : "dev";
+
+          const newVersion = version.increment(incrementType as SemVerIncrement).increment("PRERELEASE", modifier);
+          newVersion.preReleases = newVersion.preReleases.filter(element => element.identifier === modifier);
+          return newVersion;
+        }
+
+        return version.increment(incrementType as SemVerIncrement);
+      }
+    }
   }
 
-  throw new Error("Cannot increment version of unknown type!");
+  throw new Error(`Cannot increment version of unknown type: ${incrementType}!`);
 }
 
 /**
@@ -276,21 +256,20 @@ export function getVersionScheme(): VersionScheme {
  * @param increment String representation of the increment type
  * @returns Increment type
  */
-export function getIncrementType(scheme: VersionScheme, increment: string): SemVerIncrement | CalVerIncrement {
+export function getIncrementType(scheme: VersionScheme, increment: string): VersionIncrement {
+  if (increment.toUpperCase() === "RELEASE") return "RELEASE";
+
   if (scheme instanceof SemVerScheme) {
     switch (increment.toUpperCase()) {
       case "MAJOR":
       case "MINOR":
       case "PATCH":
-      case "PRERELEASE":
-      case "BUILD":
         return increment.toUpperCase() as SemVerIncrement;
     }
   } else if (scheme instanceof CalVerScheme) {
     switch (increment.toUpperCase()) {
       case "CALENDAR":
       case "MICRO":
-      case "MODIFIER":
         return increment.toUpperCase() as CalVerIncrement;
     }
   }

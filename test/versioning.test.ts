@@ -5,7 +5,7 @@ SPDX-License-Identifier: MIT
 
 import * as core from "@actions/core";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
-import { SemVer, CalVer } from "@dev-build-deploy/version-it";
+import { SemVer, CalVer, SemVerIncrement } from "@dev-build-deploy/version-it";
 
 import * as branching from "../src/branching";
 import * as versioning from "../src/versioning";
@@ -170,6 +170,10 @@ describe("Determine bump type (release branch)", () => {
     jest.spyOn(branching, "getBranch").mockImplementation(() => {
       return { type: "release" };
     });
+
+    jest.spyOn(core, "getBooleanInput").mockImplementation((_name: string, _options): boolean => {
+      return false;
+    });
   });
 
   test("Breaking Change (subject)", () => {
@@ -182,7 +186,7 @@ describe("Determine bump type (release branch)", () => {
     const calver = new versioning.CalVerScheme();
 
     expect(semver.determineIncrementType(commits)).toBe("PATCH");
-    expect(calver.determineIncrementType(commits)).toBe("MODIFIER");
+    expect(calver.determineIncrementType(commits)).toBe("CALENDAR");
   });
 
   test("Breaking Change (footer)", () => {
@@ -198,7 +202,7 @@ describe("Determine bump type (release branch)", () => {
     const calver = new versioning.CalVerScheme();
 
     expect(semver.determineIncrementType(commits)).toBe("PATCH");
-    expect(calver.determineIncrementType(commits)).toBe("MODIFIER");
+    expect(calver.determineIncrementType(commits)).toBe("CALENDAR");
   });
 
   test("Added Feature", () => {
@@ -211,7 +215,7 @@ describe("Determine bump type (release branch)", () => {
     const calver = new versioning.CalVerScheme();
 
     expect(semver.determineIncrementType(commits)).toBe("PATCH");
-    expect(calver.determineIncrementType(commits)).toBe("MODIFIER");
+    expect(calver.determineIncrementType(commits)).toBe("CALENDAR");
   });
 
   test("Added bug fix", () => {
@@ -223,7 +227,7 @@ describe("Determine bump type (release branch)", () => {
     const calver = new versioning.CalVerScheme();
 
     expect(semver.determineIncrementType(commits)).toBe("PATCH");
-    expect(calver.determineIncrementType(commits)).toBe("MODIFIER");
+    expect(calver.determineIncrementType(commits)).toBe("CALENDAR");
   });
 
   test("No change", () => {
@@ -234,11 +238,11 @@ describe("Determine bump type (release branch)", () => {
     const calver = new versioning.CalVerScheme();
 
     expect(semver.determineIncrementType(commits)).toBeUndefined();
-    expect(calver.determineIncrementType(commits)).toBe("MODIFIER");
+    expect(calver.determineIncrementType(commits)).toBe("CALENDAR");
   });
 });
 
-describe("Increment version with fallback", () => {
+describe("Increment version", () => {
   beforeAll(() => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2023, 5, 12));
@@ -248,90 +252,131 @@ describe("Increment version with fallback", () => {
     jest.useRealTimers();
   });
 
-  test("SemVer", () => {
-    jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "default" };
-    });
+  test("Semantic Versioning", () => {
+    const data = [
+      // No prerelease
+      { branch: "default", prerelease: false, version: "0.1.0", increment: "MINOR", expected: "0.2.0" },
+      { branch: "default", prerelease: false, version: "0.2.0-dev.1", increment: "MINOR", expected: "0.3.0" },
+      { branch: "default", prerelease: false, version: "0.1.0-dev.1", increment: "MAJOR", expected: "1.0.0" },
+      { branch: "release", prerelease: false, version: "0.1.0", increment: "MINOR", expected: "0.2.0" },
+      { branch: "release", prerelease: false, version: "0.2.0-rc.1", increment: "MINOR", expected: "0.3.0" },
+      { branch: "release", prerelease: false, version: "0.1.0-rc.1", increment: "MAJOR", expected: "1.0.0" },
+      // Prerelease
+      { branch: "default", prerelease: true, version: "0.1.0", increment: "MINOR", expected: "0.2.0-dev.1" },
+      { branch: "default", prerelease: true, version: "0.2.0-dev.1", increment: "MINOR", expected: "0.3.0-dev.1" },
+      { branch: "default", prerelease: true, version: "0.1.0-dev.1", increment: "MAJOR", expected: "1.0.0-dev.1" },
+      { branch: "release", prerelease: true, version: "0.1.0", increment: "MINOR", expected: "0.2.0-rc.1" },
+      { branch: "release", prerelease: true, version: "0.2.0-rc.1", increment: "MINOR", expected: "0.3.0-rc.1" },
+      { branch: "release", prerelease: true, version: "0.1.0-rc.1", increment: "MAJOR", expected: "1.0.0-rc.1" },
+      // Releasing
+      { branch: "release", prerelease: false, version: "0.1.0-rc.1", increment: "RELEASE", expected: "0.1.0" },
+      { branch: "release", prerelease: false, version: "0.1.0", increment: "RELEASE", expected: "0.1.0" },
+      { branch: "release", prerelease: true, version: "0.1.0-rc.1", increment: "RELEASE", expected: "0.1.0-rc.1" },
+      { branch: "release", prerelease: true, version: "0.1.0", increment: "RELEASE", expected: "0.1.0" },
+    ];
 
-    expect(
-      versioning
-        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MINOR"])
-        .toString()
-    ).toBe("0.2.0-dev.1");
-
-    expect(
-      versioning
-        .incrementVersion(new versioning.SemVerScheme().createVersion("0.2.0-dev.1"), ["PRERELEASE", "MINOR"])
-        .toString()
-    ).toBe("0.2.0-dev.2");
-
-    expect(
-      versioning
-        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0"), ["PRERELEASE", "MAJOR"])
-        .toString()
-    ).toBe("1.0.0-dev.1");
-
-    expect(
-      versioning
-        .incrementVersion(new versioning.SemVerScheme().createVersion("0.1.0-dev.1"), ["PRERELEASE", "MAJOR"])
-        .toString()
-    ).toBe("0.1.0-dev.2");
+    for (const { branch, prerelease, version, increment, expected } of data) {
+      const boolMock = jest
+        .spyOn(core, "getBooleanInput")
+        .mockImplementation((_name: string, _options?: core.InputOptions): boolean => {
+          return prerelease;
+        });
+      const branchMock = jest.spyOn(branching, "getBranch").mockImplementation(() => {
+        return { type: branch as "release" | "default" };
+      });
+      expect(
+        versioning
+          .incrementVersion(new versioning.SemVerScheme().createVersion(version), increment as SemVerIncrement)
+          .toString()
+      ).toBe(expected);
+      boolMock.mockReset();
+      branchMock.mockReset();
+    }
   });
 
-  test("CalVer", () => {
-    jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "default" };
-    });
+  test("Calendar Versioning", () => {
+    const data = [
+      // No prerelease
+      { branch: "default", prerelease: false, version: "2023.05.0", increment: "CALENDAR", expected: "2023.06.0" },
+      {
+        branch: "default",
+        prerelease: false,
+        version: "2023.05.0-dev.1",
+        increment: "CALENDAR",
+        expected: "2023.06.0",
+      },
+      { branch: "default", prerelease: false, version: "2023.06.3", increment: "CALENDAR", expected: "2023.06.3" },
+      { branch: "default", prerelease: false, version: "2023.06.3", increment: "MICRO", expected: "2023.06.4" },
+      { branch: "release", prerelease: false, version: "2023.05.0", increment: "CALENDAR", expected: "2023.06.0" },
+      { branch: "release", prerelease: false, version: "2023.05.0-rc.1", increment: "CALENDAR", expected: "2023.06.0" },
+      { branch: "release", prerelease: false, version: "2023.06.3", increment: "CALENDAR", expected: "2023.06.3" },
+      { branch: "release", prerelease: false, version: "2023.06.3", increment: "MICRO", expected: "2023.06.4" },
+      // Prerelease
+      { branch: "default", prerelease: true, version: "2023.05.0", increment: "CALENDAR", expected: "2023.06.0-dev.1" },
+      {
+        branch: "default",
+        prerelease: true,
+        version: "2023.05.0-dev.1",
+        increment: "CALENDAR",
+        expected: "2023.06.0-dev.1",
+      },
+      {
+        branch: "default",
+        prerelease: true,
+        version: "2023.06.0-dev.1",
+        increment: "CALENDAR",
+        expected: "2023.06.0-dev.2",
+      },
+      { branch: "default", prerelease: true, version: "2023.06.3", increment: "CALENDAR", expected: "2023.06.3-dev.1" },
+      { branch: "default", prerelease: true, version: "2023.06.3", increment: "MICRO", expected: "2023.06.4-dev.1" },
+      { branch: "release", prerelease: true, version: "2023.05.0", increment: "CALENDAR", expected: "2023.06.0-rc.1" },
+      {
+        branch: "release",
+        prerelease: true,
+        version: "2023.05.0-rc.1",
+        increment: "CALENDAR",
+        expected: "2023.06.0-rc.1",
+      },
+      {
+        branch: "release",
+        prerelease: true,
+        version: "2023.06.0-rc.1",
+        increment: "CALENDAR",
+        expected: "2023.06.0-rc.2",
+      },
+      { branch: "release", prerelease: true, version: "2023.06.3", increment: "CALENDAR", expected: "2023.06.3-rc.1" },
+      { branch: "release", prerelease: true, version: "2023.06.3", increment: "MICRO", expected: "2023.06.4-rc.1" },
+      // Releasing
+      { branch: "release", prerelease: false, version: "2023.05.0-rc.1", increment: "RELEASE", expected: "2023.05.0" },
+      { branch: "release", prerelease: false, version: "2023.05.0", increment: "RELEASE", expected: "2023.05.0" },
+      {
+        branch: "release",
+        prerelease: true,
+        version: "2023.05.0-rc.1",
+        increment: "RELEASE",
+        expected: "2023.05.0-rc.1",
+      },
+      { branch: "release", prerelease: true, version: "2023.05.0", increment: "RELEASE", expected: "2023.05.0" },
+    ];
 
-    // NOTE: This is a bug in sorting CalVer in @dev-build-deploy/version-it; it should be 2023.06.1-hotfix.1
-    expect(
-      versioning
-        .incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), ["MODIFIER", "CALENDAR"])
-        .toString()
-    ).toBe("2023.06.0-hotfix.1");
-  });
-});
+    for (const { branch, prerelease, version, increment, expected } of data) {
+      const boolMock = jest
+        .spyOn(core, "getBooleanInput")
+        .mockImplementation((_name: string, _options?: core.InputOptions): boolean => {
+          return prerelease;
+        });
+      const branchMock = jest.spyOn(branching, "getBranch").mockImplementation(() => {
+        return { type: branch as "release" | "default" };
+      });
 
-describe("Increment version (CalVer)", () => {
-  beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(2023, 5, 12));
-  });
+      expect(
+        versioning
+          .incrementVersion(new versioning.CalVerScheme().createVersion(version), increment as SemVerIncrement)
+          .toString()
+      ).toBe(expected);
 
-  afterAll(() => {
-    jest.useRealTimers();
-  });
-
-  test("Main Branch (new date)", () => {
-    jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "default" };
-    });
-
-    expect(
-      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "CALENDAR").toString()
-    ).toBe("2023.06.0");
-  });
-
-  test("Main Branch (same date)", () => {
-    jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "default" };
-    });
-    expect(
-      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), "CALENDAR").toString()
-    ).toBe("2023.06.1");
-  });
-
-  test("Release Branch", () => {
-    jest.spyOn(branching, "getBranch").mockImplementation(() => {
-      return { type: "release", modifier: "2023.06" };
-    });
-    expect(
-      versioning.incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0"), "MODIFIER").toString()
-    ).toBe("2023.05.0-hotfix.1");
-    expect(
-      versioning
-        .incrementVersion(new versioning.CalVerScheme().createVersion("2023.05.0-hotfix.1"), "MODIFIER")
-        .toString()
-    ).toBe("2023.05.0-hotfix.2");
+      boolMock.mockReset();
+      branchMock.mockReset();
+    }
   });
 });

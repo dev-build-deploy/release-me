@@ -45,6 +45,11 @@ inputs:
   release-notes:
     description: 'External Release Notes file to include in the GitHub Release'
     required: false
+  
+  prerelease:
+    description: 'Current incremented version is a prerelease'
+    required: false
+    default: false
 
   increment-type:
     description: 'Increment type to apply to the version'
