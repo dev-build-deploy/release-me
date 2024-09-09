@@ -29,7 +29,7 @@
     "@actions/github": ">=6.0.0",
     "@dev-build-deploy/commit-it": ">=2.3.1",
     "@dev-build-deploy/version-it": ">=0.3.0",
-    "yaml": ">=2.4.5"
+    "yaml": ">=2.5.1"
   },
   "devDependencies": {
     "@octokit/openapi-types": ">=22",
