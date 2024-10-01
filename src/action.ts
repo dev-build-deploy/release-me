@@ -61,14 +61,9 @@ export async function run(): Promise<void> {
         latestVersion = versionScheme.initialVersion();
       }
 
-      const increments: versioning.VersionIncrement[] = [];
+      let increment: versioning.VersionIncrement | undefined;
       if (core.getInput("increment-type")) {
-        increments.push(
-          ...core
-            .getInput("increment-type")
-            .split("|")
-            .map(inc => versioning.getIncrementType(versionScheme, inc))
-        );
+        increment = versioning.getIncrementType(versionScheme, core.getInput("increment-type"));
       } else {
         const delta = await releasing.getChangesSince(latestRef);
         core.info(`ℹ️ Changes since: ${delta.length} commits`);
@@ -76,17 +71,17 @@ export async function run(): Promise<void> {
         commits.push(...filterConventionalCommits(delta));
         core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
 
-        const increment = versionScheme.determineIncrementType(commits);
-        if (increment === undefined) {
-          core.info("⚠️ No increment required, skipping...");
-          core.endGroup();
-          return;
-        }
-        increments.push(increment);
+        increment = versionScheme.determineIncrementType(commits);
+      }
+
+      if (increment === undefined) {
+        core.info("⚠️ No increment required, skipping...");
+        core.endGroup();
+        return;
       }
 
       core.setOutput("previous-version", latestVersion.toString());
-      newVersion = versioning.incrementVersion(latestVersion, increments);
+      newVersion = versioning.incrementVersion(latestVersion, increment);
       core.setOutput("incremented-version", newVersion.toString());
     }
     core.endGroup();
