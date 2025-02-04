@@ -9,6 +9,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVerIncrement, SemVerIncrement } from "@dev-build-deploy/version-it";
+// eslint-disable-next-line import/namespace
 import { RequestError } from "@octokit/request-error";
 import YAML from "yaml";
 
@@ -61,7 +62,7 @@ export interface IReleaseConfiguration {
 export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration | undefined> {
   const octokit = github.getOctokit(core.getInput("token"));
   try {
-    const { data: data } = await octokit.rest.repos.getContent({
+    const { data } = await octokit.rest.repos.getContent({
       ...github.context.repo,
       path: core.getInput("config"),
       ref: github.context.ref,
@@ -81,7 +82,6 @@ export async function getConfigurationFromAPI(): Promise<IReleaseConfiguration |
     }
     throw error;
   }
-  return;
 }
 
 /**
@@ -166,8 +166,6 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: C
         return `### ${category.title}\n\n${categoryCommits
           .map(commit => `- ${firstCharToUpperCase(commit.description ?? "")}`)
           .join("\n")}\n\n`;
-
-      return;
     })
     .join("\n")}`;
 

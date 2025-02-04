@@ -52,12 +52,14 @@ export class SemVerScheme extends VersionScheme {
 
   initialVersion(): SemVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new SemVer(undefined, prefix);
+    const semver = new SemVer();
+    semver.prefix = prefix;
+    return semver
   }
 
   createVersion(version: string): SemVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new SemVer(version, prefix);
+    return SemVer.fromString(version, prefix);
   }
 
   /**
@@ -90,8 +92,6 @@ export class SemVerScheme extends VersionScheme {
 
     if (typeCount.feat > 0) return "MINOR";
     if (typeCount.fix > 0) return "PATCH";
-
-    return;
   }
 
   isValid(version: string): boolean {
@@ -125,7 +125,7 @@ export class CalVerScheme extends VersionScheme {
 
   createVersion(version: string): CalVer {
     const prefix = core.getInput("prefix") ?? undefined;
-    return new CalVer("YYYY.0M.MICRO", version, prefix);
+    return CalVer.fromString("YYYY.0M.MICRO", version, prefix);
   }
 
   /**
@@ -175,14 +175,14 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
           if (newVersion.major === version.major && newVersion.minor === version.minor) {
             const newVersion = version.increment("MICRO");
             if (keepModifier) {
-              newVersion.modifier = version.modifier;
+              newVersion.modifiers = version.modifiers;
             }
             return newVersion;
           }
           break;
         case "MODIFIER":
-          if (version.modifier === undefined) {
-            newVersion.modifier = "hotfix.1";
+          if (version.modifiers.length === 0) {
+            newVersion.modifiers = [{identifier: "hotfix", value: 1, length: 1}];
           }
           break;
       }
@@ -209,14 +209,14 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
       if (incrementType === "PRERELEASE") {
         // Apply the pre-release modifier based on the current branch (release: rc.#, default: dev.#)
         const prereleaseModifier = branching.getBranch().type === "release" ? "rc." : "dev.";
-        if (!(version.preRelease ?? "").startsWith(prereleaseModifier)) {
-          version.preRelease = prereleaseModifier + "0";
+        if (version.preReleases.length === 0 || !(version.preReleases[0].identifier ?? "").startsWith(prereleaseModifier)) {
+          version.preReleases = [{ identifier: prereleaseModifier, value: 0, length: 1 }];
         }
       }
 
       const newVersion = version.increment(incrementType);
       if (keepMetadata) {
-        newVersion.preRelease = version.preRelease;
+        newVersion.preReleases = version.preReleases;
       }
       return newVersion;
     }
