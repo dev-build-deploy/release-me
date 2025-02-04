@@ -54,7 +54,7 @@ export class SemVerScheme extends VersionScheme {
     const prefix = core.getInput("prefix") ?? undefined;
     const semver = new SemVer();
     semver.prefix = prefix;
-    return semver
+    return semver;
   }
 
   createVersion(version: string): SemVer {
@@ -167,29 +167,6 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
   }
 
   if (version instanceof CalVer) {
-    // eslint-disable-next-line no-inner-declarations
-    function incrementCalVer(version: CalVer, incrementType: CalVerIncrement, keepModifier: boolean): CalVer {
-      const newVersion = version.increment(incrementType);
-      switch (incrementType) {
-        case "CALENDAR":
-          if (newVersion.major === version.major && newVersion.minor === version.minor) {
-            const newVersion = version.increment("MICRO");
-            if (keepModifier) {
-              newVersion.modifiers = version.modifiers;
-            }
-            return newVersion;
-          }
-          break;
-        case "MODIFIER":
-          if (version.modifiers.length === 0) {
-            newVersion.modifiers = [{identifier: "hotfix", value: 1, length: 1}];
-          }
-          break;
-      }
-
-      return newVersion;
-    }
-
     let newVersion = new CalVer(version.format, version);
     let previousIncrement = "";
     for (const increment of incrementType) {
@@ -204,23 +181,6 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
 
     return newVersion;
   } else if (version instanceof SemVer) {
-    // eslint-disable-next-line no-inner-declarations
-    function incrementSemVer(version: SemVer, incrementType: SemVerIncrement, keepMetadata: boolean): SemVer {
-      if (incrementType === "PRERELEASE") {
-        // Apply the pre-release modifier based on the current branch (release: rc.#, default: dev.#)
-        const prereleaseModifier = branching.getBranch().type === "release" ? "rc." : "dev.";
-        if (version.preReleases.length === 0 || !(version.preReleases[0].identifier ?? "").startsWith(prereleaseModifier)) {
-          version.preReleases = [{ identifier: prereleaseModifier, value: 0, length: 1 }];
-        }
-      }
-
-      const newVersion = version.increment(incrementType);
-      if (keepMetadata) {
-        newVersion.preReleases = version.preReleases;
-      }
-      return newVersion;
-    }
-
     let newVersion = new SemVer(version);
     let previousIncrement = "";
     for (const increment of incrementType) {
@@ -238,6 +198,64 @@ export function incrementVersion(version: Version, incrementType: VersionIncreme
   }
 
   throw new Error("Cannot increment version of unknown type!");
+}
+
+/**
+ * Helper function to manage increments of Calendar Versions
+ * @param version Current version
+ * @param incrementType Increment type
+ * @param keepModifier Keep the existing modifier
+ * @returns Incremented Calendar Version
+ */
+function incrementCalVer(version: CalVer, incrementType: CalVerIncrement, keepModifier: boolean): CalVer {
+  switch (incrementType) {
+    case "CALENDAR": {
+      let newVersion = version.increment(incrementType);
+      if (newVersion.major === version.major && newVersion.minor === version.minor) {
+        newVersion = version.increment("MICRO");
+        if (keepModifier) {
+          newVersion.modifiers = version.modifiers;
+        }
+      }
+      return newVersion;
+    }
+    case "MODIFIER": {
+      const newVersion = version.increment(incrementType, "hotfix");
+      if (version.modifiers.length === 0) {
+        newVersion.modifiers = [{ identifier: "hotfix", value: 1, length: 1 }];
+      }
+      return newVersion;
+    }
+  }
+
+  throw new Error(`Unsupported increment type (${incrementType})!`);
+}
+
+/**
+ * Helper function to manage increments of Semantic Versions
+ * @param version Current version
+ * @param incrementType Increment type
+ * @param keepMetadata Keep the pre-release metadata
+ * @returns Incremented Semantic Version
+ */
+function incrementSemVer(version: SemVer, incrementType: SemVerIncrement, keepMetadata: boolean): SemVer {
+  let prereleaseModifier = undefined;
+
+  if (incrementType === "PRERELEASE") {
+    // Apply the pre-release modifier based on the current branch (release: rc.#, default: dev.#)
+    prereleaseModifier = branching.getBranch().type === "release" ? "rc" : "dev";
+    if (version.preReleases.length === 0 || (version.preReleases[0].identifier ?? "") !== prereleaseModifier) {
+      version.preReleases = [{ identifier: prereleaseModifier, value: 0, length: 1 }];
+    }
+  }
+
+  const newVersion = version.increment(incrementType, prereleaseModifier);
+
+  if (keepMetadata) {
+    newVersion.preReleases = version.preReleases;
+  }
+
+  return newVersion;
 }
 
 /**
