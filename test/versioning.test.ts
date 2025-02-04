@@ -283,12 +283,11 @@ describe("Increment version with fallback", () => {
       return { type: "default" };
     });
 
-    // NOTE: This is a bug in sorting CalVer in @dev-build-deploy/version-it; it should be 2023.06.1-hotfix.1
     expect(
       versioning
         .incrementVersion(new versioning.CalVerScheme().createVersion("2023.06.0"), ["MODIFIER", "CALENDAR"])
         .toString()
-    ).toBe("2023.06.0-hotfix.1");
+    ).toBe("2023.06.1-hotfix.1");
   });
 });
 
