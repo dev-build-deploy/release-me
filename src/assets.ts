@@ -39,17 +39,17 @@ function getAssetPath(asset: string): string {
  * @returns List of filepaths towards the downloaded artifacts
  */
 async function downloadArtifacts(artifacts: string[]): Promise<IAsset[]> {
-  const client = artifact.create();
+  const client = new artifact.DefaultArtifactClient();
   const filepaths: IAsset[] = [];
-  for (const artifact of artifacts) {
-    core.startGroup(`📡 Downloading artifact: ${artifact}`);
+  for (const arti of artifacts) {
+    core.startGroup(`📡 Downloading artifact: ${arti}`);
 
-    const dirname = getAssetPath(artifact);
-    await client.downloadArtifact(artifact, dirname, { createArtifactFolder: false });
+    const dirname = getAssetPath(arti);
+    await client.downloadArtifact((await client.getArtifact(arti)).artifact.id, { path: dirname });
 
     filepaths.push(
       ...fs.readdirSync(dirname).map(file => {
-        return { filepath: path.join(dirname, file), label: artifact };
+        return { filepath: path.join(dirname, file), label: arti };
       })
     );
 
