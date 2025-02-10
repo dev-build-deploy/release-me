@@ -42,7 +42,7 @@
     "@typescript-eslint/eslint-plugin": ">=7",
     "@typescript-eslint/parser": ">=7",
     "@vercel/ncc": ">=0",
-    "eslint": ">=8",
+    "eslint": ">=9",
     "eslint-import-resolver-typescript": ">=3",
     "eslint-plugin-import": ">=2",
     "eslint-plugin-jest": ">=28",
