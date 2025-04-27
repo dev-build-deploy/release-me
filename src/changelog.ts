@@ -9,7 +9,6 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVerIncrement, SemVerIncrement } from "@dev-build-deploy/version-it";
-// eslint-disable-next-line import/namespace
 import { RequestError } from "@octokit/request-error";
 import YAML from "yaml";
 
@@ -96,9 +95,9 @@ export async function getConfiguration(versionScheme: VersionScheme): Promise<IR
   const config = (await thisModule.getConfigurationFromAPI()) ?? versionScheme.defaultConfiguration;
 
   config.changelog.categories.forEach(category => {
-    if (category.increment === undefined) category.increment = ["*"];
-    if (category.scopes === undefined) category.scopes = ["*"];
-    if (category.types === undefined) category.types = ["*"];
+    category.increment ??= ["*"];
+    category.scopes ??= ["*"];
+    category.types ??= ["*"];
   });
 
   return config;
@@ -132,8 +131,12 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: C
   core.info("📓 Generating Release Notes...");
 
   const isWildcard = (value?: string[]): boolean => isMatch(value, "*");
-  const isMatch = (value?: string[], item?: string): boolean =>
-    item !== undefined && value !== undefined && value.includes(item);
+  const isMatch = (value?: string[], item?: string): boolean => {
+    if (!item || !value) {
+      return false;
+    }
+    return value.includes(item);
+  };
 
   const config = await getConfiguration(versionScheme);
   const title = "## What's Changed";
