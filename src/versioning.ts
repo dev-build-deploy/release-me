@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable @typescript-eslint/no-extraneous-class */
-
 import * as core from "@actions/core";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
@@ -98,7 +96,8 @@ export class SemVerScheme extends VersionScheme {
     try {
       const v = this.createVersion(version);
       return v.prefix === this.prefix;
-    } catch (error) {
+    } catch {
+      // Return false if the version creation fails
       return false;
     }
   }
@@ -134,7 +133,6 @@ export class CalVerScheme extends VersionScheme {
    * - If the branch type is the default branch, the CALENDAR version is incremented.
    * @returns Increment type
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   determineIncrementType(_commits: ConventionalCommit[]): CalVerIncrement | undefined {
     return branching.getBranch().type === "default" ? "CALENDAR" : "MODIFIER";
   }
@@ -143,7 +141,7 @@ export class CalVerScheme extends VersionScheme {
     try {
       const v = this.createVersion(version);
       return v.prefix === this.prefix;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

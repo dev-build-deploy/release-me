@@ -117,7 +117,6 @@ async function getReleases(branch: branching.IBranch, versionScheme: versioning.
 export async function getLatestRelease(
   branch: branching.IBranch,
   versionScheme: versioning.VersionScheme
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<Release | undefined> {
   core.info("🔍 Retrieving GitHub Releases");
   const releases = await getReleases(branch, versionScheme);
