@@ -38,5 +38,5 @@ outputs:
     description: 'JSON object containing the GitHub Release information'
 
 runs:
-  using: 'node16'
+  using: 'node24'
   main: '../lib/get/index.js'
