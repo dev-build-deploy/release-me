@@ -39,7 +39,7 @@
     "@octokit/openapi-types": "^23",
     "@tsconfig/node20": "^20",
     "@types/jest": "^29",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "@vercel/ncc": "^0",
