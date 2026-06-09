@@ -34,6 +34,8 @@ export async function run(): Promise<void> {
     const versionScheme = versioning.getVersionScheme();
     const versionOverride = core.getInput("version");
 
+    const effectivePaths = core.getMultilineInput("paths").filter(p => p.trim() !== "");
+
     let newVersion: versioning.Version;
     const commits: ConventionalCommit[] = [];
 
@@ -70,10 +72,18 @@ export async function run(): Promise<void> {
             .map(inc => versioning.getIncrementType(versionScheme, inc))
         );
       } else {
-        const delta = await releasing.getChangesSince(latestRef);
-        core.info(`ℹ️ Changes since: ${delta.length} commits`);
+        const { commits: delta, comparisonFiles } = await releasing.getChangesSince(latestRef);
 
-        commits.push(...filterConventionalCommits(delta));
+        let filteredDelta = delta;
+        if (effectivePaths.length > 0) {
+          core.info(`ℹ️ Filtering commits by paths: ${effectivePaths.join(", ")}`);
+          filteredDelta = await releasing.filterCommitsByPaths(delta, comparisonFiles, effectivePaths);
+          core.info(`ℹ️ Commits after path filter: ${filteredDelta.length}`);
+        } else {
+          core.info(`ℹ️ Changes since: ${delta.length} commits`);
+        }
+
+        commits.push(...filterConventionalCommits(filteredDelta));
         core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
 
         const increment = versionScheme.determineIncrementType(commits);
