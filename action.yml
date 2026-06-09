@@ -54,6 +54,13 @@ inputs:
     description: 'Version to associate with the GitHub Release'
     required: false
   
+  paths:
+    description: >
+      Multiline list of glob patterns. When set, only commits touching matching
+      paths are considered for the version increment and changelog.
+      Overrides `paths` declared in the config file.
+    required: false
+
   create-release:
     description: 'Create the GitHub Release, can be set to `false` to perform a dry run (i.e. determine the previous and incremented version)'
     required: false

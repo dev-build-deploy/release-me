@@ -7,6 +7,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import * as commit from "@dev-build-deploy/commit-it";
 import { SemVer } from "@dev-build-deploy/version-it";
+import { minimatch } from "minimatch";
 import type { components as octokitComponents } from "@octokit/openapi-types";
 
 import * as branching from "./branching";
@@ -130,20 +131,69 @@ export async function getLatestRelease(
 /**
  * Retrieve the commits since the provided ref
  * @param ref The git ref to compare against
- * @returns List of commits
+ * @returns Commits and the aggregate list of files changed across the comparison range
  */
-export async function getChangesSince(ref: string): Promise<commit.Commit[]> {
+export async function getChangesSince(
+  ref: string
+): Promise<{ commits: commit.Commit[]; comparisonFiles: string[] }> {
   const octokit = github.getOctokit(core.getInput("token"));
   const commits: Commit[] = [];
+  let comparisonFiles: string[] = [];
+  let firstPage = true;
 
   for await (const response of octokit.paginate.iterator(octokit.rest.repos.compareCommitsWithBasehead, {
     ...github.context.repo,
     basehead: `${ref}...${github.context.sha}`,
   })) {
     commits.push(...response.data.commits);
+    if (firstPage) {
+      comparisonFiles = (response.data.files ?? []).map(f => f.filename);
+      firstPage = false;
+    }
   }
 
-  return commits.map(c => commit.Commit.fromString({ hash: c.sha, message: c.commit.message }));
+  return {
+    commits: commits.map(c => commit.Commit.fromString({ hash: c.sha, message: c.commit.message })),
+    comparisonFiles,
+  };
+}
+
+/**
+ * Retrieve the files changed by a specific commit
+ * @param sha Commit SHA
+ * @returns List of changed file paths
+ */
+async function getCommitFiles(sha: string): Promise<string[]> {
+  const octokit = github.getOctokit(core.getInput("token"));
+  const { data } = await octokit.rest.repos.getCommit({ ...github.context.repo, ref: sha });
+  return (data.files ?? []).map(f => f.filename);
+}
+
+/**
+ * Filter commits to only those that touched one or more of the provided glob path patterns.
+ *
+ * Uses the aggregate comparison-level file list as a fast pre-check: if none of those files
+ * match the patterns, returns an empty array without making per-commit API calls.
+ *
+ * @param commits Commits to filter
+ * @param comparisonFiles Aggregate changed files across the full comparison range
+ * @param paths Glob patterns to match against
+ * @returns Filtered list of commits
+ */
+export async function filterCommitsByPaths(
+  commits: commit.Commit[],
+  comparisonFiles: string[],
+  paths: string[]
+): Promise<commit.Commit[]> {
+  const matchesAnyPath = (files: string[]): boolean =>
+    files.some(file => paths.some(pattern => minimatch(file, pattern)));
+
+  if (!matchesAnyPath(comparisonFiles)) {
+    return [];
+  }
+
+  const commitFileLists = await Promise.all(commits.map(c => getCommitFiles(c.hash)));
+  return commits.filter((_, i) => matchesAnyPath(commitFileLists[i]));
 }
 
 /**
