@@ -36,7 +36,7 @@
     "@eslint/compat": "^1",
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9",
-    "@octokit/openapi-types": "^23",
+    "@octokit/openapi-types": "^26",
     "@tsconfig/node20": "^20",
     "@types/jest": "^29",
     "@types/node": "^20",
