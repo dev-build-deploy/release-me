@@ -133,9 +133,7 @@ export async function getLatestRelease(
  * @param ref The git ref to compare against
  * @returns Commits and the aggregate list of files changed across the comparison range
  */
-export async function getChangesSince(
-  ref: string
-): Promise<{ commits: commit.Commit[]; comparisonFiles: string[] }> {
+export async function getChangesSince(ref: string): Promise<{ commits: commit.Commit[]; comparisonFiles: string[] }> {
   const octokit = github.getOctokit(core.getInput("token"));
   const commits: Commit[] = [];
   let comparisonFiles: string[] = [];
