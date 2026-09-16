@@ -49,6 +49,14 @@ inputs:
   increment-type:
     description: 'Increment type to apply to the version'
     required: false
+
+  increment-mapping:
+    description: >
+      Mapping (YAML or JSON) of Conventional Commit types to the increment type to apply
+      (MAJOR, MINOR, PATCH or NONE), extending the defaults (`feat` -> MINOR, `fix` -> PATCH).
+      Takes precedence over `increment-mapping` in the Release configuration file.
+      Only supported by the `semver` versioning scheme.
+    required: false
   
   version:
     description: 'Version to associate with the GitHub Release'

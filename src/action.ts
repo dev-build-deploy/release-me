@@ -9,6 +9,7 @@ import { Commit, ConventionalCommit } from "@dev-build-deploy/commit-it";
 import * as assets from "./assets";
 import * as branching from "./branching";
 import * as changelog from "./changelog";
+import * as configuration from "./configuration";
 import * as releasing from "./releasing";
 import * as versioning from "./versioning";
 
@@ -37,6 +38,7 @@ export async function run(): Promise<void> {
     const effectivePaths = core.getMultilineInput("paths").filter(p => p.trim() !== "");
 
     let newVersion: versioning.Version;
+    let releaseConfiguration: configuration.IReleaseConfiguration | undefined;
     const commits: ConventionalCommit[] = [];
 
     core.startGroup("🔍 Determining increment type");
@@ -72,6 +74,13 @@ export async function run(): Promise<void> {
             .map(inc => versioning.getIncrementType(versionScheme, inc))
         );
       } else {
+        releaseConfiguration = await configuration.getConfiguration(versionScheme.defaultConfiguration);
+        if (releaseConfiguration["increment-mapping"] && versionScheme instanceof versioning.CalVerScheme) {
+          core.warning(
+            "The increment mapping is only supported by the `semver` versioning scheme and will be ignored; every change results in an increment of the Calendar Version."
+          );
+        }
+
         const { commits: delta, comparisonFiles } = await releasing.getChangesSince(latestRef);
 
         let filteredDelta = delta;
@@ -86,7 +95,7 @@ export async function run(): Promise<void> {
         commits.push(...filterConventionalCommits(filteredDelta));
         core.info(`ℹ️ Conventional Commits since: ${commits.length} commits`);
 
-        const increment = versionScheme.determineIncrementType(commits);
+        const increment = versionScheme.determineIncrementType(commits, releaseConfiguration["increment-mapping"]);
         if (increment === undefined) {
           core.info("⚠️ No increment required, skipping...");
           core.endGroup();
@@ -107,9 +116,11 @@ export async function run(): Promise<void> {
 
     core.startGroup(`📦 Creating GitHub Release...`);
 
+    releaseConfiguration ??= await configuration.getConfiguration(versionScheme.defaultConfiguration);
+
     const body = core.getInput("release-notes")
       ? await changelog.readChangelogFromFile(core.getInput("release-notes"))
-      : await changelog.generateChangelog(versionScheme, commits);
+      : await changelog.generateChangelog(versionScheme, commits, releaseConfiguration);
 
     const release = await releasing.createRelease(newVersion, body);
     await assets.updateAssets(release.id);

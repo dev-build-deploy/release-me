@@ -69,6 +69,7 @@ jobs:
 | `create-release` | NO | Create the GitHub Release, can be set to `false` to perform a dry run (i.e. determine the previous and incremented version), defaults to `true`. |
 | `draft` | NO | Create a GitHub Release in `draft` status, defaults to `false` |
 | `files` | NO | Multiline list of files (paths) to upload as a [GitHub Release asset](./docs/asset-management.md) |
+| `increment-mapping` | NO | Mapping (YAML or JSON) of [Conventional Commits] types to increment types, extending the defaults. Takes precedence over `increment-mapping` in the [Release configuration](./docs/configuration.md). Only supported by `semver`, please refer to the [Versioning Strategies](./docs/versioning-strategies.md) for more details |
 | `increment-type` | NO | Enforce a specific increment type, please refer to the [Versioning Strategies](./docs/versioning-strategies.md) for more details |
 | `paths` | NO | Multiline list of glob patterns; when set, only commits touching matching paths are considered for version increment and changelog generation |
 | `release-notes` | NO | Path towards a file containing the release notes to include in the GitHub release (Markdown format recommended) |

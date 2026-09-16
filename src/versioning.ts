@@ -8,10 +8,24 @@ import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
 
 import * as branching from "./branching";
-import { IReleaseConfiguration } from "./configuration";
+import { IIncrementMapping, IncrementMappingType, IReleaseConfiguration } from "./configuration";
 
 export type Version = SemVer | CalVer;
 export type VersionIncrement = SemVerIncrement | CalVerIncrement;
+
+/** Relative weight of each increment type; `NONE` does not result in a release */
+const INCREMENT_WEIGHT: { [key in IncrementMappingType]: number } = { NONE: 0, PATCH: 1, MINOR: 2, MAJOR: 3 };
+
+/** Increment type per relative weight */
+const INCREMENT_BY_WEIGHT = ["NONE", "PATCH", "MINOR", "MAJOR"] as const;
+
+/**
+ * Default mapping of Conventional Commit types to increment types.
+ *
+ * NOTE: breaking changes are not part of the mapping as those are, in line with
+ *       the Conventional Commits specification, always considered `MAJOR`.
+ */
+const DEFAULT_INCREMENT_MAPPING: IIncrementMapping = { feat: "MINOR", fix: "PATCH" };
 
 /**
  * Versioning scheme
@@ -24,7 +38,10 @@ export type VersionIncrement = SemVerIncrement | CalVerIncrement;
  */
 export abstract class VersionScheme {
   abstract defaultConfiguration: IReleaseConfiguration;
-  abstract determineIncrementType(commits: ConventionalCommit[]): VersionIncrement | undefined;
+  abstract determineIncrementType(
+    commits: ConventionalCommit[],
+    incrementMapping?: IIncrementMapping
+  ): VersionIncrement | undefined;
   abstract isValid(version: string): boolean;
   abstract createVersion(version: string): Version;
   abstract initialVersion(): Version;
@@ -63,33 +80,36 @@ export class SemVerScheme extends VersionScheme {
   /**
    * Determines which Semantic Version core to increments based on the provided commits;
    * - If a commit contains a breaking change, the MAJOR version is incremented.
-   * - If a commit contains a feature (`feat:`), the MINOR version is incremented.
-   * - If a commit contains a fix (`fix:`), the PATCH version is incremented.
+   * - Otherwise the increment mapping determines the increment type per Conventional
+   *   Commit type (by default; `feat:` -> MINOR and `fix:` -> PATCH), of which the
+   *   largest increment is applied.
    *
    * In case the branch type is a release branch, the PATCH version is always incremented.
    *
    * @param commits List of commits to determine the increment type for
+   * @param incrementMapping Increment mapping, applied on top of the default mapping
    * @returns Increment type
    */
-  determineIncrementType(commits: ConventionalCommit[]): SemVerIncrement | undefined {
-    const typeCount: { [key: string]: number } = { feat: 0, fix: 0 };
+  determineIncrementType(
+    commits: ConventionalCommit[],
+    incrementMapping?: IIncrementMapping
+  ): SemVerIncrement | undefined {
+    const mapping = { ...DEFAULT_INCREMENT_MAPPING, ...incrementMapping };
+    let weight = INCREMENT_WEIGHT.NONE;
 
     for (const commit of commits) {
       if (!commit.isValid) continue;
       if (commit.breaking) return branching.getBranch().type === "default" ? "MAJOR" : "PATCH";
 
       // Implementors of the Conventional Commit specification MUST always treat Conventional Commit elements as non-case sensitive.
-      const commitType = commit.type?.toLowerCase() ?? "";
-      if (commitType === "feat" || commitType === "fix") {
-        typeCount[commitType]++;
-      }
+      const increment = mapping[commit.type?.toLowerCase() ?? ""];
+      if (increment !== undefined) weight = Math.max(weight, INCREMENT_WEIGHT[increment]);
     }
 
-    // Release branches always resort to PATCH versions.
-    if (branching.getBranch().type === "release" && (typeCount.feat > 0 || typeCount.fix > 0)) return "PATCH";
+    if (weight === INCREMENT_WEIGHT.NONE) return undefined;
 
-    if (typeCount.feat > 0) return "MINOR";
-    if (typeCount.fix > 0) return "PATCH";
+    // Release branches always resort to PATCH versions.
+    return branching.getBranch().type === "default" ? (INCREMENT_BY_WEIGHT[weight] as SemVerIncrement) : "PATCH";
   }
 
   isValid(version: string): boolean {
@@ -133,7 +153,10 @@ export class CalVerScheme extends VersionScheme {
    * - If the branch type is the default branch, the CALENDAR version is incremented.
    * @returns Increment type
    */
-  determineIncrementType(_commits: ConventionalCommit[]): CalVerIncrement | undefined {
+  determineIncrementType(
+    _commits: ConventionalCommit[],
+    _incrementMapping?: IIncrementMapping
+  ): CalVerIncrement | undefined {
     return branching.getBranch().type === "default" ? "CALENDAR" : "MODIFIER";
   }
 

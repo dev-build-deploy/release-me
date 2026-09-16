@@ -24,9 +24,26 @@ export interface IExclude {
   scopes?: string[];
 }
 
+/** Increment types which can be mapped to a Conventional Commit type */
+export const INCREMENT_MAPPING_TYPES = ["MAJOR", "MINOR", "PATCH", "NONE"] as const;
+export type IncrementMappingType = (typeof INCREMENT_MAPPING_TYPES)[number];
+
+/**
+ * Increment mapping; a mapping of Conventional Commit types to the increment
+ * type which should be applied for that specific type.
+ *
+ * NOTE: Conventional Commit types are stored in lower case, increment types in upper case.
+ *
+ * @interface IIncrementMapping
+ */
+export interface IIncrementMapping {
+  [type: string]: IncrementMappingType;
+}
+
 /**
  * Release configuration
  * @interface IReleaseConfiguration
+ * @member increment-mapping Mapping of Conventional Commit types to increment types
  * @member changelog Changelog configuration
  * @member changelog.exclude Exclude commits from the changelog
  * @member changelog.categories Categories to use in the changelog
@@ -37,6 +54,7 @@ export interface IExclude {
  * @member changelog.categories.exclude Exclude commits from the category
  */
 export interface IReleaseConfiguration {
+  "increment-mapping"?: IIncrementMapping;
   changelog: {
     exclude?: IExclude;
     categories: {
@@ -97,5 +115,84 @@ export async function getConfiguration(defaultConfiguration: IReleaseConfigurati
     category.types ??= ["*"];
   });
 
+  config["increment-mapping"] = thisModule.getIncrementMapping(config["increment-mapping"]);
+
   return config;
+}
+
+/**
+ * Parses (and validates) an increment mapping; both a YAML (or JSON) formatted string, as
+ * provided by the `increment-mapping` input parameter, and an already parsed mapping, as
+ * provided by the Release configuration file, are supported.
+ *
+ * @param mapping Increment mapping to parse
+ * @param source Source of the increment mapping, used in error messages
+ * @returns Validated increment mapping
+ * @internal
+ */
+export function parseIncrementMapping(mapping: unknown, source: string): IIncrementMapping {
+  const result: IIncrementMapping = {};
+  if (mapping === undefined || (typeof mapping === "string" && mapping.trim() === "")) return result;
+
+  let data = mapping;
+  if (typeof mapping === "string") {
+    try {
+      data = YAML.parse(mapping);
+    } catch (ex) {
+      throw new Error(`Unable to parse the increment mapping (${source}); ${(ex as Error).message}`);
+    }
+  }
+
+  if (data === null || data === undefined) return result;
+  if (typeof data !== "object" || Array.isArray(data)) {
+    throw new Error(
+      `Invalid increment mapping (${source}); expected a mapping of Conventional Commit types to increment types!`
+    );
+  }
+
+  for (const [key, value] of Object.entries(data as { [key: string]: unknown })) {
+    const type = String(key).trim().toLowerCase();
+    if (!/^[a-z0-9-]+$/.test(type)) {
+      throw new Error(
+        `Invalid Conventional Commit type ('${key}') in the increment mapping (${source}); scopes are not supported!`
+      );
+    }
+
+    const increment = value === null || value === undefined ? "" : String(value).trim().toUpperCase();
+    if (!INCREMENT_MAPPING_TYPES.includes(increment as IncrementMappingType)) {
+      throw new Error(
+        `Invalid increment type ('${String(value)}') for Conventional Commit type '${type}' in the increment mapping (${source}); expected one of ${INCREMENT_MAPPING_TYPES.join(", ")}!`
+      );
+    }
+
+    result[type] = increment as IncrementMappingType;
+  }
+
+  return result;
+}
+
+/**
+ * Determines the increment mapping to apply, based on the mapping provided by the Release
+ * configuration file and the `increment-mapping` input parameter. Both are merged per
+ * Conventional Commit type, the input parameter takes precedence.
+ *
+ * @param configurationMapping Increment mapping as provided by the Release configuration file
+ * @returns Increment mapping, or `undefined` in case no mapping has been provided
+ * @internal
+ */
+export function getIncrementMapping(configurationMapping?: IIncrementMapping): IIncrementMapping | undefined {
+  const mapping = {
+    ...parseIncrementMapping(configurationMapping, core.getInput("config") || "release configuration"),
+    ...parseIncrementMapping(core.getInput("increment-mapping"), "increment-mapping"),
+  };
+
+  if (Object.keys(mapping).length === 0) return undefined;
+
+  core.info(
+    `ℹ️ Increment mapping: ${Object.entries(mapping)
+      .map(([type, increment]) => `${type} → ${increment}`)
+      .join(", ")}`
+  );
+
+  return mapping;
 }
