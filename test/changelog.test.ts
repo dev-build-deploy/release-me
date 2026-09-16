@@ -7,6 +7,7 @@ import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 
 import * as branching from "../src/branching";
 import * as changelog from "../src/changelog";
+import * as configuration from "../src/configuration";
 import { SemVerScheme } from "../src/versioning";
 
 describe("Generate Changelog", () => {
@@ -28,7 +29,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Breaking changes only", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           categories: [{ title: "💥 Breaking Changes", increment: ["MAJOR"] }],
@@ -48,7 +49,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Breaking changes of type feat only", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           categories: [{ title: "💥 Breaking Changes", increment: ["MAJOR"], types: ["feat"] }],
@@ -68,7 +69,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Bug fix with scope", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           categories: [{ title: "🐛 Bug Fixes", increment: ["PATCH"], scopes: ["core"] }],
@@ -88,7 +89,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Bug fix without scope", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           categories: [{ title: "🐛 Bug Fixes", increment: ["PATCH"], exclude: { scopes: ["core"] } }],
@@ -108,7 +109,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Documentation and bug fixes", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           categories: [
@@ -131,7 +132,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Exclude all bug fixes", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           exclude: { types: ["fix"] },
@@ -155,7 +156,7 @@ describe("Generate Changelog", () => {
   });
 
   test("Example usecase", async () => {
-    jest.spyOn(changelog, "getConfigurationFromAPI").mockImplementation(async () => {
+    jest.spyOn(configuration, "getConfigurationFromAPI").mockImplementation(async () => {
       return {
         changelog: {
           exclude: {

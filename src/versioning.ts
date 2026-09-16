@@ -8,7 +8,7 @@ import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 import { CalVer, SemVer, SemVerIncrement, CalVerIncrement } from "@dev-build-deploy/version-it";
 
 import * as branching from "./branching";
-import { IReleaseConfiguration } from "./changelog";
+import { IReleaseConfiguration } from "./configuration";
 
 export type Version = SemVer | CalVer;
 export type VersionIncrement = SemVerIncrement | CalVerIncrement;
