@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as core from "@actions/core";
 import { ConventionalCommit } from "@dev-build-deploy/commit-it";
 
-import { getConfiguration } from "./configuration";
+import { IReleaseConfiguration } from "./configuration";
 import { VersionScheme } from "./versioning";
 
 /**
@@ -33,9 +33,14 @@ export async function readChangelogFromFile(file: string): Promise<string> {
  * Generate the changelog based on the provided version and commits
  * @param versionScheme Versioning scheme of the Release
  * @param commits Conventional Commits part of the Changelog
+ * @param config Release configuration
  * @returns Changelog in Markdown format
  */
-export async function generateChangelog(versionScheme: VersionScheme, commits: ConventionalCommit[]): Promise<string> {
+export async function generateChangelog(
+  versionScheme: VersionScheme,
+  commits: ConventionalCommit[],
+  config: IReleaseConfiguration
+): Promise<string> {
   core.info("📓 Generating Release Notes...");
 
   const isWildcard = (value?: string[]): boolean => isMatch(value, "*");
@@ -46,14 +51,13 @@ export async function generateChangelog(versionScheme: VersionScheme, commits: C
     return value.includes(item);
   };
 
-  const config = await getConfiguration(versionScheme.defaultConfiguration);
   const title = "## What's Changed";
   const changelog = `${title}\n\n${config.changelog?.categories
     ?.map(category => {
       const categoryCommits = commits.filter(commit => {
         if (!commit.isValid) return false;
 
-        const incrementType = versionScheme.determineIncrementType([commit]);
+        const incrementType = versionScheme.determineIncrementType([commit], config["increment-mapping"]);
 
         const hasValidIncrement =
           (isWildcard(category.increment) || isMatch(category.increment, incrementType)) &&

@@ -334,3 +334,65 @@ describe("Increment version (CalVer)", () => {
     ).toBe("2023.05.0-hotfix.2");
   });
 });
+
+describe("Increment mapping", () => {
+  const commit = (message: string): ConventionalCommit => ConventionalCommit.fromString({ hash: "0a0b0c0d", message });
+
+  beforeEach(() => {
+    jest.spyOn(branching, "getBranch").mockImplementation(() => {
+      return { type: "default" };
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("Extends the default mapping", () => {
+    const semver = new versioning.SemVerScheme();
+
+    expect(semver.determineIncrementType([commit("chore: update dependencies")], { chore: "PATCH" })).toBe("PATCH");
+    expect(semver.determineIncrementType([commit("feat: add new feature")], { chore: "PATCH" })).toBe("MINOR");
+    expect(semver.determineIncrementType([commit("docs: update documentation")], { chore: "PATCH" })).toBeUndefined();
+  });
+
+  test("Overrides the default mapping", () => {
+    const semver = new versioning.SemVerScheme();
+
+    expect(semver.determineIncrementType([commit("fix: prevent bug")], { fix: "NONE" })).toBeUndefined();
+    expect(semver.determineIncrementType([commit("feat: add new feature")], { feat: "PATCH" })).toBe("PATCH");
+  });
+
+  test("Applies the largest increment type", () => {
+    const semver = new versioning.SemVerScheme();
+
+    expect(
+      semver.determineIncrementType([commit("fix: prevent bug"), commit("chore: update dependencies")], {
+        chore: "MINOR",
+      })
+    ).toBe("MINOR");
+  });
+
+  test("Breaking changes are always MAJOR", () => {
+    const semver = new versioning.SemVerScheme();
+
+    expect(semver.determineIncrementType([commit("feat!: breaking change")], { feat: "NONE" })).toBe("MAJOR");
+    expect(semver.determineIncrementType([commit("chore!: breaking change")], { chore: "NONE" })).toBe("MAJOR");
+  });
+
+  test("Release branches resort to PATCH", () => {
+    jest.spyOn(branching, "getBranch").mockImplementation(() => {
+      return { type: "release", modifier: "1.2" };
+    });
+    const semver = new versioning.SemVerScheme();
+
+    expect(semver.determineIncrementType([commit("chore: update dependencies")], { chore: "MINOR" })).toBe("PATCH");
+    expect(semver.determineIncrementType([commit("docs: update documentation")], { chore: "MINOR" })).toBeUndefined();
+  });
+
+  test("Is ignored when using Calendar Versioning", () => {
+    const calver = new versioning.CalVerScheme();
+
+    expect(calver.determineIncrementType([commit("chore: update dependencies")], { chore: "NONE" })).toBe("CALENDAR");
+  });
+});

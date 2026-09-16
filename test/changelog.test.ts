@@ -37,7 +37,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -57,7 +58,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(true);
@@ -77,7 +79,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -97,7 +100,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -120,7 +124,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -144,7 +149,8 @@ describe("Generate Changelog", () => {
       };
     });
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
 
     expect(result.includes("Add new feature")).toBe(false);
     expect(result.includes("Add new breaking feature")).toBe(false);
@@ -213,7 +219,8 @@ describe("Generate Changelog", () => {
       }),
     ];
 
-    const result = await changelog.generateChangelog(new SemVerScheme(), commits);
+    const config = await configuration.getConfiguration(new SemVerScheme().defaultConfiguration);
+    const result = await changelog.generateChangelog(new SemVerScheme(), commits, config);
     const expectation = `## What's Changed
 
 ### 💥 Breaking Changes

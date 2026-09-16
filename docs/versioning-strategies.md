@@ -54,6 +54,7 @@ In addition, on the *default branch*, the Conventional Commit type is taken into
 | Anything else | `1.1.1` | - |
 
 Any other Conventional Commit type will, unless breaking, **not** increment the version.
+You can extend (or change) this behavior using an [increment mapping](#increment-mapping).
 
 Any changes made to a *release branch* (`release/<MAJOR>.<MINOR>`) will **at most** increment `PATCH`:
 
@@ -87,6 +88,67 @@ gitGraph
 
 </details>
 
+### Increment mapping
+
+By default only `feat` and `fix` result in an increment of the version. You can map
+additional [Conventional Commits] types to an increment type using either the
+`increment-mapping` input parameter:
+
+```yaml
+- uses: dev-build-deploy/release-me@v0
+  with:
+    increment-mapping: |
+      chore: PATCH
+      docs: PATCH
+      perf: MINOR
+```
+
+or the identical `increment-mapping` item in the [Release configuration](./configuration.md);
+
+```yaml
+increment-mapping:
+  chore: PATCH
+  docs: PATCH
+  perf: MINOR
+```
+
+The mapping is applied on top of the defaults, in order of precedence:
+
+| Precedence | Source |
+| --- | --- |
+| 1 (highest) | `increment-mapping` input parameter |
+| 2 | `increment-mapping` in the Release configuration file |
+| 3 (lowest) | Defaults; `feat` -> `MINOR` and `fix` -> `PATCH` |
+
+Both sources are merged per Conventional Commit type, allowing you to override a single
+type (eg. `chore: NONE`) without having to repeat the full mapping.
+
+| Increment type | Description |
+| --- | --- |
+| `MAJOR` | Increment the `MAJOR` version |
+| `MINOR` | Increment the `MINOR` version |
+| `PATCH` | Increment the `PATCH` version |
+| `NONE` | Do **not** increment the version |
+
+In case multiple commits are part of the release, the *largest* increment type is applied.
+
+> :bulb: Conventional Commit types are treated as case insensitive (`FIX` and `fix` are
+> equivalent), increment types MUST be provided in upper case.
+
+Please take note of the following;
+
+- **Breaking changes are always `MAJOR`**, regardless of the increment mapping.
+- **Scopes are not supported**; `chore(deps): PATCH` is rejected. Use the
+  [Release configuration](./configuration.md) to filter scopes in your release notes.
+- **Only [Conventional Commits] are considered**; commit messages which do not adhere to
+  the specification are never taken into account for the version increment.
+- Changes to a *release branch* will **at most** increment `PATCH`; the increment mapping
+  only determines *whether* a commit results in an increment on such a branch.
+- The increment mapping is **not supported** in combination with
+  [Calendar Versioning](#calendar-versioning), as every change already results in an
+  increment of the version. A warning is provided in case the mapping is set regardless.
+- Mapping a type to an increment type affects your [release notes](./configuration.md) as
+  well; the changelog categories are based on the resulting increment type.
 
 ## Calendar Versioning
 
@@ -145,3 +207,5 @@ gitGraph
 ```
 
 </details>
+
+[Conventional Commits]: https://www.conventionalcommits.org/en/v1.0.0/
