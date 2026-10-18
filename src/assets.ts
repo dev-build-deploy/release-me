@@ -9,8 +9,11 @@ import * as path from "path";
 import * as artifact from "@actions/artifact";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import { minimatch } from "minimatch";
 
-const DEFAULT_ASSET_DIR = "_assets";
+import type { IRepository } from "./releasing";
+
+export const DEFAULT_ASSET_DIR = "_assets";
 
 /**
  * Asset information
@@ -194,4 +197,72 @@ export async function downloadAssets(id: number): Promise<void> {
     core.info(`✅ Downloaded ${asset.label} to ${asset.output}`);
     core.endGroup();
   }
+}
+
+/**
+ * Downloads the assets of a GitHub Release whose name (or label) matches one of the provided patterns
+ *
+ * NOTE: every pattern must match at least one asset; assets are stored by their name in the
+ *       destination directory, overwriting any existing file with the same name.
+ *
+ * @param releaseId The GitHub Release identifier
+ * @param patterns List of asset names, labels or glob patterns to download
+ * @param destination Directory to download the assets to
+ * @param repository The repository the GitHub Release belongs to
+ * @returns List of filepaths towards the downloaded assets
+ */
+export async function downloadReleaseAssets(
+  releaseId: number,
+  patterns: string[],
+  destination: string,
+  repository: IRepository
+): Promise<string[]> {
+  if (patterns.length === 0) {
+    return [];
+  }
+
+  const octokit = github.getOctokit(core.getInput("token"));
+  const currentAssets = await octokit.paginate(octokit.rest.repos.listReleaseAssets, {
+    ...repository,
+    release_id: releaseId,
+    per_page: 100,
+  });
+
+  const matchedAssets: typeof currentAssets = [];
+  for (const pattern of patterns) {
+    const matches = currentAssets.filter(
+      a => minimatch(a.name, pattern) || (a.label !== null && a.label !== "" && minimatch(a.label, pattern))
+    );
+
+    if (matches.length === 0) {
+      throw new Error(`Asset ${pattern} not found!`);
+    }
+
+    matchedAssets.push(...matches.filter(m => !matchedAssets.some(a => a.id === m.id)));
+  }
+
+  fs.mkdirSync(destination, { recursive: true });
+
+  const filepaths: string[] = [];
+  for (const asset of matchedAssets) {
+    core.startGroup(`📡 Downloading ${asset.name}...`);
+    const output = path.join(destination, path.basename(asset.name));
+
+    const { data: local } = await octokit.rest.repos.getReleaseAsset({
+      ...repository,
+      asset_id: asset.id,
+      headers: { accept: "application/octet-stream" },
+    });
+
+    // Disabling `no-explicit-any` as the type definition for `octokit.rest.repos.getReleaseAsset`
+    // is incorrect when requesting the binary data.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fs.writeFileSync(output, Buffer.from(local as any));
+    filepaths.push(output);
+
+    core.info(`✅ Downloaded ${asset.name} to ${output}`);
+    core.endGroup();
+  }
+
+  return filepaths;
 }

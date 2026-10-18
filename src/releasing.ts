@@ -17,6 +17,48 @@ type Release = octokitComponents["schemas"]["release"];
 type Commit = octokitComponents["schemas"]["commit"];
 
 /**
+ * GitHub repository identifier
+ * @interface IRepository
+ * @member owner The owner (user or organisation) of the repository
+ * @member repo The name of the repository
+ */
+export interface IRepository {
+  owner: string;
+  repo: string;
+}
+
+/**
+ * Parses a repository identifier (`owner/name`); an empty value results in the current repository
+ * @param value The repository identifier (`owner/name`)
+ * @returns The repository
+ */
+export function parseRepository(value: string): IRepository {
+  if (value.trim() === "") {
+    return { ...github.context.repo };
+  }
+
+  const elements = value.trim().split("/");
+  if (elements.length !== 2 || elements.some(e => !/^[A-Za-z0-9_.-]+$/.test(e))) {
+    throw new Error(`Invalid repository '${value}', expected 'owner/name'`);
+  }
+
+  return { owner: elements[0], repo: elements[1] };
+}
+
+/**
+ * Determines whether the provided repository is the repository the workflow runs in
+ * @param repository The repository
+ * @returns True if it is the current repository, false otherwise
+ */
+export function isCurrentRepository(repository: IRepository): boolean {
+  const current = github.context.repo;
+  return (
+    repository.owner.toLowerCase() === current.owner.toLowerCase() &&
+    repository.repo.toLowerCase() === current.repo.toLowerCase()
+  );
+}
+
+/**
  * Creates a new GitHub Release, incl:
  *   Generated Release Notes
  *   Uploaded artifacts
@@ -47,14 +89,19 @@ export async function createRelease(version: versioning.Version, body: string): 
  * Retrieve a GitHub Release by tag or name
  * @param id The tag or name of the release
  * @param type The type of the release identifier
+ * @param repository The repository to retrieve the release from, defaults to the current repository
  * @returns The release object
  */
-export async function getRelease(id: string, type: "tag" | "name"): Promise<Release | undefined> {
+export async function getRelease(
+  id: string,
+  type: "tag" | "name",
+  repository: IRepository = github.context.repo
+): Promise<Release | undefined> {
   const octokit = github.getOctokit(core.getInput("token"));
 
   switch (type) {
     case "tag": {
-      const { data: release } = await octokit.rest.repos.getReleaseByTag({ ...github.context.repo, tag: id });
+      const { data: release } = await octokit.rest.repos.getReleaseByTag({ ...repository, tag: id });
       return release;
     }
 
@@ -62,7 +109,7 @@ export async function getRelease(id: string, type: "tag" | "name"): Promise<Rele
       const releases: Release[] = [];
 
       for await (const page of octokit.paginate.iterator(octokit.rest.repos.listReleases, {
-        ...github.context.repo,
+        ...repository,
         per_page: 100,
       })) {
         releases.push(...page.data);
@@ -79,14 +126,21 @@ export async function getRelease(id: string, type: "tag" | "name"): Promise<Rele
 
 /**
  * Retrieve GitHub Releases, sorted by SemVer
+ * @param branch
+ * @param versionScheme
+ * @param repository The repository to retrieve the releases from
  * @returns List of releases
  */
-async function getReleases(branch: branching.IBranch, versionScheme: versioning.VersionScheme): Promise<Release[]> {
+async function getReleases(
+  branch: branching.IBranch,
+  versionScheme: versioning.VersionScheme,
+  repository: IRepository
+): Promise<Release[]> {
   const octokit = github.getOctokit(core.getInput("token"));
   const releases: Release[] = [];
 
   for await (const page of octokit.paginate.iterator(octokit.rest.repos.listReleases, {
-    ...github.context.repo,
+    ...repository,
   })) {
     releases.push(...page.data);
   }
@@ -113,14 +167,16 @@ async function getReleases(branch: branching.IBranch, versionScheme: versioning.
  * Retrieves the latest GitHub Release associated with your current versioning strategy and branch.
  * @param branch
  * @param versionScheme
+ * @param repository The repository to retrieve the release from, defaults to the current repository
  * @returns
  */
 export async function getLatestRelease(
   branch: branching.IBranch,
-  versionScheme: versioning.VersionScheme
+  versionScheme: versioning.VersionScheme,
+  repository: IRepository = github.context.repo
 ): Promise<Release | undefined> {
   core.info("🔍 Retrieving GitHub Releases");
-  const releases = await getReleases(branch, versionScheme);
+  const releases = await getReleases(branch, versionScheme, repository);
   if (releases.length === 0) {
     core.warning("⚠️ No releases matching current configuration found...");
     return;
