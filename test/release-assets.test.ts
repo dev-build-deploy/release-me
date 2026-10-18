@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import * as assets from "../src/assets";
+import * as assets from "../src/release-assets";
 
 const mockListReleaseAssets = jest.fn();
 const mockGetReleaseAsset = jest.fn();
@@ -18,7 +18,6 @@ jest.mock("@actions/core", () => ({
   startGroup: jest.fn(),
   endGroup: jest.fn(),
 }));
-jest.mock("@actions/artifact", () => ({}));
 jest.mock("@actions/github", () => ({
   context: { repo: { owner: "owner", repo: "repo" } },
   getOctokit: () => ({

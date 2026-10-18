@@ -5,8 +5,8 @@
 
 import * as core from "@actions/core";
 
-import * as assets from "../assets";
 import * as branching from "../branching";
+import * as assets from "../release-assets";
 import * as releasing from "../releasing";
 import * as versioning from "../versioning";
 
