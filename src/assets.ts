@@ -10,7 +10,7 @@ import * as artifact from "@actions/artifact";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
-const DEFAULT_ASSET_DIR = "_assets";
+import { DEFAULT_ASSET_DIR, downloadAsset } from "./release-assets";
 
 /**
  * Asset information
@@ -176,20 +176,7 @@ export async function downloadAssets(id: number): Promise<void> {
 
     asset.output = asset.output ?? path.join(getAssetPath(matchedAsset.label ?? matchedAsset.name), matchedAsset.name);
 
-    const { data: local } = await octokit.rest.repos.getReleaseAsset({
-      ...github.context.repo,
-      asset_id: matchedAsset.id,
-      headers: { accept: "application/octet-stream" },
-    });
-
-    if (path.parse(asset.output).dir !== "") {
-      fs.mkdirSync(path.parse(asset.output).dir, { recursive: true });
-    }
-
-    // Disabling `no-explicit-any` as the type definition for `octokit.rest.repos.getReleaseAsset`
-    // is incorrect when requesting the binary data.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fs.writeFileSync(asset.output, Buffer.from(local as any));
+    await downloadAsset(github.context.repo, matchedAsset.id, asset.output);
 
     core.info(`✅ Downloaded ${asset.label} to ${asset.output}`);
     core.endGroup();
