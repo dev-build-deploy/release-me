@@ -7,8 +7,29 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      lint-and-typescript:
+        # eslint, typescript-eslint and typescript share peer-dependency ranges
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+          - "typescript"
+      octokit:
+        patterns:
+          - "@octokit/*"
+      actions-toolkit:
+        patterns:
+          - "@actions/*"
