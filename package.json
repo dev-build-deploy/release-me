@@ -15,7 +15,8 @@
     "url": "https://github.com/dev-build-deploy/release-me/issues"
   },
   "scripts": {
-    "build": "run-p build:*",
+    "build": "run-p build:* && npm run check:bundle",
+    "check:bundle": "node scripts/check-bundle.mjs lib",
     "build:assets": "ncc build -o lib/assets src/entrypoints/assets.ts",
     "build:get": "ncc build -o lib/get src/entrypoints/get.ts",
     "build:main": "ncc build -o lib/main src/entrypoints/main.ts",
