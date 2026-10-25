@@ -26,3 +26,22 @@ repos:
   rev: v1.7.12
   hooks:
   - id: actionlint-system
+
+# Local checks: each prevents a CI failure we have had.
+- repo: local
+  hooks:
+  # The committed bundles must be what the staged source builds to (also fails when
+  # ncc stubs an ESM-only package, see scripts/check-bundle.mjs).
+  - id: check-lib
+    name: lib is rebuilt from the staged source
+    entry: node scripts/check-lib.mjs lib
+    language: system
+    files: ^(src/|package\.json$|package-lock\.json$|tsconfig\.json$)
+    pass_filenames: false
+  # Dependabot's commit messages must pass .github/.commit-me.json.
+  - id: check-dependabot
+    name: dependabot.yml commit messages are allowed by .commit-me.json
+    entry: node scripts/check-dependabot.mjs
+    language: system
+    files: ^\.github/(dependabot\.yml|\.commit-me\.json)$
+    pass_filenames: false
