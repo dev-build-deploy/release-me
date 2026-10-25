@@ -21,7 +21,8 @@
     "build:main": "ncc build -o lib/main src/entrypoints/main.ts",
     "test": "jest --coverage",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write **/*.ts"
+    "format": "prettier --write **/*.ts",
+    "prepare": "node -e \"if(process.env.CI)process.exit(0);const r=require('child_process').spawnSync('pre-commit',['install','--hook-type','pre-commit','--hook-type','commit-msg'],{stdio:'inherit'});if(r.error)console.log('hint: install pre-commit (https://pre-commit.com) to get the git hooks')\""
   },
   "dependencies": {
     "@actions/artifact": "^2",
