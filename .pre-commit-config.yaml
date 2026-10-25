@@ -1,17 +1,28 @@
 # SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
 # SPDX-License-Identifier: CC0-1.0
 
+# Install with `pre-commit install --hook-type pre-commit --hook-type commit-msg`
+# (npm projects do this on `npm install`).
+
 repos:
 - repo: https://github.com/dev-build-deploy/commit-me
-  rev: v1.3.1
+  rev: v2.0.0
   hooks:
   - id: commit-me
     args: [
-    # Custom configuration file path
-    '--config', '.github/.commit-me.json'
-  ]
+      # Custom configuration file path
+      '--config', '.github/.commit-me.json'
+    ]
 
 - repo: https://github.com/dev-build-deploy/reuse-me
   rev: v1.0.0
   hooks:
   - id: reuse-me
+
+# Lints .github/workflows (incl. the inputs of local `uses: ./` actions against
+# action.yml). `actionlint-system` runs the actionlint on your PATH (no Go or
+# Docker needed): `brew install actionlint`.
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.7.12
+  hooks:
+  - id: actionlint-system
