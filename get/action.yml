@@ -4,7 +4,8 @@
 name: 'ReleaseMe - Get (latest) GitHub Release'
 author: 'Kevin de Jong'
 description: >
-  Retrieves the (latest) GitHub Release associated with the current branch
+  Retrieves the (latest) GitHub Release associated with the current branch,
+  or of another repository, and optionally downloads its assets
 
 branding:
   icon: 'code'
@@ -33,9 +34,25 @@ inputs:
     description: 'GitHub Release to retrieve (by name)'
     required: false
 
+  repository:
+    description: 'Repository (owner/name) to retrieve the GitHub Release from, defaults to the current repository'
+    required: false
+
+  download:
+    description: 'Multiline list of GitHub Release asset names (or labels, or glob patterns) to download'
+    required: false
+
+  path:
+    description: 'Directory to download the GitHub Release assets to'
+    required: false
+    default: '_assets'
+
 outputs:
   release:
     description: 'JSON object containing the GitHub Release information'
+
+  files:
+    description: 'JSON array containing the paths of the downloaded GitHub Release assets'
 
 runs:
   using: 'node24'
