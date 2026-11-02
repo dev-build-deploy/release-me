@@ -31,7 +31,7 @@
     "@actions/github": "^6",
     "@dev-build-deploy/commit-it": "^2",
     "@dev-build-deploy/version-it": "^1",
-    "minimatch": "^10.2.5",
+    "minimatch": "^11.0.3",
     "yaml": "^2"
   },
   "devDependencies": {
